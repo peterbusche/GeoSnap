@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"
+        android:textSize="24sp"
+        android:layout_centerInParent="true" />
+</RelativeLayout>
+
+
+<!--
+Purpose: res/layout folder Defines the structure and appearance of the app's UI.
+
+Role in activity_main.xml:
+    Contains the layout for MainActivity.
+    Defines UI elements like buttons, text views, and input fields.
+
+
+Additional Layout Files:
+    If your app has multiple screens, each screen will have its own XML layout file
+        (e.g., activity_second.xml).
+    You may create reusable UI components in separate layout files
+        (e.g., custom_button.xml) and include them where needed.
+-->
