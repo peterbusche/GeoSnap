@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     private GeoPoint currentLocation;
     private Marker currentMarker;
 
+    private TextView latLongTextView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,17 +59,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         mapView = findViewById(R.id.mapView);
         mapView.setMultiTouchControls(true);
 
+
+
         //initialize textview
-        //textview=(TextView)findViewById(R.id.textView);
+        latLongTextView=(TextView)findViewById(R.id.latLongTextView);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         // Buttons for zooming
-        Button zoomInButton = findViewById(R.id.zoomInButton);
-        Button zoomOutButton = findViewById(R.id.zoomOutButton);
-
-        // Set button click listeners
-        zoomInButton.setOnClickListener(v -> mapView.getController().zoomIn());
-        zoomOutButton.setOnClickListener(v -> mapView.getController().zoomOut());
+//        Button zoomInButton = findViewById(R.id.zoomInButton);
+//        Button zoomOutButton = findViewById(R.id.zoomOutButton);
+//
+//        // Set button click listeners
+//        zoomInButton.setOnClickListener(v -> mapView.getController().zoomIn());
+//        zoomOutButton.setOnClickListener(v -> mapView.getController().zoomOut());
 
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -114,15 +118,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         marker.setTitle("You are here!");
         mapView.getOverlays().add(marker);
 
+        // Update the TextView with latitude and longitude
+        updateLatLongTextView(latitude, longitude);
+
         Toast.makeText(this, "Location: " + latitude + ", " + longitude, Toast.LENGTH_LONG).show();
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mapView.onDetach();
-    }
 
+    private void updateLatLongTextView(double latitude, double longitude) {
+        String latLongText = String.format("Lat: %.5f, Long: %.5f", latitude, longitude);
+        latLongTextView.setText(latLongText);
+    }
 
 
 
@@ -155,6 +161,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     @Override
     public void onProviderDisabled(String provider) {
         Toast.makeText(this, "Provider disabled: " + provider, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDetach();
     }
 
 }
