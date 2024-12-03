@@ -54,8 +54,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     private Polyline polyline;  //connect markers
     private Handler handler; //handler for periodic tracking
 
-
-
+    //FOR SIMULATION
+    private List<GeoPoint> simulatedLocations; // Predefined list of locations
+    private int simulatedIndex = 0; // Index to track current simulated location
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         mapView.getOverlayManager().add(polyline);
 
 
+        initializeSimulatedLocations();
+
 
         //get permissions to access device
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -86,6 +89,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         }
     }
 
+    private void initializeSimulatedLocations() {
+        // Predefined list of simulated locations (example coordinates)
+        simulatedLocations = new ArrayList<>();
+        simulatedLocations.add(new GeoPoint(43.6150, -116.2023)); // Boise
+        simulatedLocations.add(new GeoPoint(43.6165, -116.2038)); // Nearby location 1
+        simulatedLocations.add(new GeoPoint(43.6180, -116.2053)); // Nearby location 2
+        simulatedLocations.add(new GeoPoint(43.6200, -116.2065)); // Nearby location 3
+        simulatedLocations.add(new GeoPoint(43.6220, -116.2078)); // Nearby location 4
+    }
+
+
     private void startLocationTracking() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
@@ -93,16 +107,44 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         }
     }
 
+//    private void startPeriodicTracking() {
+//        handler = new Handler();
+//        Runnable trackingRunnable = new Runnable() {
+//            @Override
+//            public void run() {
+//                if(trackedLocations.size() > 0) {
+//                    GeoPoint lastLocation = trackedLocations.get(trackedLocations.size() - 1);
+//                    addMarkerAndPolyline(lastLocation);
+//                }
+//                handler.postDelayed(this,5000); //repeat every 5 seconds
+//            }
+//        };
+//        handler.post(trackingRunnable);
+//    }
+
     private void startPeriodicTracking() {
         handler = new Handler();
         Runnable trackingRunnable = new Runnable() {
             @Override
             public void run() {
-                if(trackedLocations.size() > 0) {
-                    GeoPoint lastLocation = trackedLocations.get(trackedLocations.size() - 1);
-                    addMarkerAndPolyline(lastLocation);
+                if (simulatedIndex < simulatedLocations.size()) {
+                    // Get the next simulated location
+                    GeoPoint simulatedLocation = simulatedLocations.get(simulatedIndex);
+                    simulatedIndex++;
+
+                    // Use the simulated location to update the map
+                    addMarkerAndPolyline(simulatedLocation);
+//                    adjustZoomToFitAllMarkers();
+
+                    // Update the TextView with simulated location
+                    updateLatLongTextView(simulatedLocation.getLatitude(), simulatedLocation.getLongitude());
+                } else {
+                    // Stop the simulation if all locations are used
+                    handler.removeCallbacks(this);
                 }
-                handler.postDelayed(this,5000); //repeat every 5 seconds
+
+                // Repeat every 5 seconds
+                handler.postDelayed(this, 5000);
             }
         };
         handler.post(trackingRunnable);
@@ -130,23 +172,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
             latLongTextView.setText(String.format("Lat: %.5f, Long: %.5f", newLocation.getLatitude(), newLocation.getLongitude()));
 
             // Display current location and dynamically adjust zoom
-            displayCurrentLocation(location);
-            adjustZoomToFitAllMarkers();
+            displayCurrentLocation(newLocation);
+//            adjustZoomToFitAllMarkers();
         }
     }
-
-//    @Override
-//    public void onLocationChanged(Location location) {
-//        if(location != null) {
-//            GeoPoint newLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
-//
-//            // Update the current location text
-//            latLongTextView.setText(String.format("Lat: %.5f, Long: %.5f", newLocation.getLatitude(), newLocation.getLongitude()));
-//
-//            // Add the new location to tracked locations
-//            trackedLocations.add(newLocation);
-//        }
-//    }
 
     private void requestLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -154,83 +183,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         }
     }
 
-
-    private void displayCurrentLocation(Location location) {
-        if (location == null) {
-            Toast.makeText(this, "Unable to get location. Try again later.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        double longitude = location.getLongitude();
-        double latitude = location.getLatitude();
-
-        // Set current location
-        currentLocation = new GeoPoint(latitude, longitude);
-
-        // Set map center and zoom level
+    private void displayCurrentLocation(GeoPoint location) {
+        // Zoom to current location only when the app starts
         mapView.getController().setZoom(15.0);
-        mapView.getController().setCenter(currentLocation);
-
-        // Update the marker
-        if (currentMarker != null) {
-            mapView.getOverlays().remove(currentMarker);
-        }
+        mapView.getController().setCenter(location);
 
         // Add a marker for the current location
         Marker marker = new Marker(mapView);
-        marker.setPosition(currentLocation);
-        marker.setTitle("You are here!");
+        marker.setPosition(location);
+        marker.setTitle("Current Location");
         mapView.getOverlays().add(marker);
 
-        // Add to tracked locations if tracking is active
-        if (trackedLocations != null && !trackedLocations.contains(currentLocation)) {
-            trackedLocations.add(currentLocation);
-            updatePolyline();
-        }
-
-        // Update the TextView with latitude and longitude
-        updateLatLongTextView(latitude, longitude);
-
-        Toast.makeText(this, "Location: " + latitude + ", " + longitude, Toast.LENGTH_LONG).show();
+        // Update the TextView with current location
+        updateLatLongTextView(location.getLatitude(), location.getLongitude());
     }
-
-    private void updatePolyline() {
-        // Update the polyline with all tracked locations
-        polyline.setPoints(trackedLocations);
-        mapView.invalidate(); // Redraw the map
-    }
-
-    private void adjustZoomToFitAllMarkers() {
-        if (trackedLocations.isEmpty()) {
-            return;
-        }
-
-        // Calculate a bounding box to fit all tracked locations
-        double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE;
-        double minLon = Double.MAX_VALUE, maxLon = Double.MIN_VALUE;
-
-        for (GeoPoint point : trackedLocations) {
-            minLat = Math.min(minLat, point.getLatitude());
-            maxLat = Math.max(maxLat, point.getLatitude());
-            minLon = Math.min(minLon, point.getLongitude());
-            maxLon = Math.max(maxLon, point.getLongitude());
-        }
-
-        mapView.zoomToBoundingBox(
-                new org.osmdroid.util.BoundingBox(maxLat, maxLon, minLat, minLon), true
-        );
-    }
-
-
 
 //    private void displayCurrentLocation(Location location) {
 //        if (location == null) {
 //            Toast.makeText(this, "Unable to get location. Try again later.", Toast.LENGTH_SHORT).show();
 //            return;
 //        }
-//        // Simulated current location (Boise, Idaho)
-//        double longitude=location.getLongitude();
-//        double latitude=location.getLatitude();
+//
+//        double longitude = location.getLongitude();
+//        double latitude = location.getLatitude();
 //
 //        // Set current location
 //        currentLocation = new GeoPoint(latitude, longitude);
@@ -250,18 +225,51 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
 //        marker.setTitle("You are here!");
 //        mapView.getOverlays().add(marker);
 //
+//        // Add to tracked locations if tracking is active
+//        if (trackedLocations != null && !trackedLocations.contains(currentLocation)) {
+//            trackedLocations.add(currentLocation);
+//            updatePolyline();
+//        }
+//
 //        // Update the TextView with latitude and longitude
 //        updateLatLongTextView(latitude, longitude);
 //
 //        Toast.makeText(this, "Location: " + latitude + ", " + longitude, Toast.LENGTH_LONG).show();
 //    }
 
+    private void updatePolyline() {
+        // Update the polyline with all tracked locations
+        polyline.setPoints(trackedLocations);
+        mapView.invalidate(); // Redraw the map
+    }
+
+//    private void adjustZoomToFitAllMarkers() {
+//        if (trackedLocations.isEmpty()) {
+//            return;
+//        }
+//
+//        // Calculate a bounding box to fit all tracked locations
+//        double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE;
+//        double minLon = Double.MAX_VALUE, maxLon = Double.MIN_VALUE;
+//
+//        for (GeoPoint point : trackedLocations) {
+//            minLat = Math.min(minLat, point.getLatitude());
+//            maxLat = Math.max(maxLat, point.getLatitude());
+//            minLon = Math.min(minLon, point.getLongitude());
+//            maxLon = Math.max(maxLon, point.getLongitude());
+//        }
+//
+//        mapView.zoomToBoundingBox(
+//                new org.osmdroid.util.BoundingBox(maxLat, maxLon, minLat, minLon), true
+//        );
+//    }
+
+
 
     private void updateLatLongTextView(double latitude, double longitude) {
         String latLongText = String.format("Lat: %.5f, Long: %.5f", latitude, longitude);
         latLongTextView.setText(latLongText);
     }
-
 
 
 // Registers the LocationListener to receive updates every second (1000ms)
@@ -278,10 +286,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         locationManager.removeUpdates(this);
     }
 
-//    @Override
-//    public void onLocationChanged(Location location) {
-//        displayCurrentLocation(location);
-//    }
 
 //Called when a location provider (e.g., GPS) is enabled. Displays a toast message indicating that the provider is available.
     @Override
@@ -295,10 +299,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         Toast.makeText(this, "Provider disabled: " + provider, Toast.LENGTH_SHORT).show();
     }
 
+//    @Override
+//    protected void onDestroy() {
+//        super.onDestroy();
+//        mapView.onDetach();
+//    }
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mapView.onDetach();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
     }
 
 }
