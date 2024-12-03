@@ -31,45 +31,109 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 
+import android.widget.Button;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+
+
 
 public class MainActivity extends AppCompatActivity implements LocationListener{
     private LocationManager locationManager;
-    private TextView textview;
+    //private TextView textview;
+    private MapView mapView;
+    private GeoPoint currentLocation;
+    private Marker currentMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Set OsmDroid configuration
+        Configuration.getInstance().setUserAgentValue(getPackageName());
         setContentView(R.layout.activity_main);
 
-        textview=(TextView)findViewById(R.id.textView);
+        // Initialize the MapView
+        mapView = findViewById(R.id.mapView);
+        mapView.setMultiTouchControls(true);
+
+        //initialize textview
+        //textview=(TextView)findViewById(R.id.textView);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        //get permissions to access decive
+        // Buttons for zooming
+        Button zoomInButton = findViewById(R.id.zoomInButton);
+        Button zoomOutButton = findViewById(R.id.zoomOutButton);
+
+        // Set button click listeners
+        zoomInButton.setOnClickListener(v -> mapView.getController().zoomIn());
+        zoomOutButton.setOnClickListener(v -> mapView.getController().zoomOut());
+
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+
+        //get permissions to access device
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
             return;
+        } else {
+            requestLocationUpdates();
         }
 
-        //handle null location
-        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if (location != null) {
-            onLocationChanged(location);
-        } else {
-            textview.setText("Unable to get location. Try again later.");
+    }
+    private void requestLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
         }
     }
+    private void displayCurrentLocation(Location location) {
+        if (location == null) {
+            Toast.makeText(this, "Unable to get location. Try again later.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Simulated current location (Boise, Idaho)
+        double longitude=location.getLongitude();
+        double latitude=location.getLatitude();
+
+        // Set current location
+        currentLocation = new GeoPoint(latitude, longitude);
+
+        // Set map center and zoom level
+        mapView.getController().setZoom(15.0);
+        mapView.getController().setCenter(currentLocation);
+
+        // Update the marker
+        if (currentMarker != null) {
+            mapView.getOverlays().remove(currentMarker);
+        }
+
+        // Add a marker for the current location
+        Marker marker = new Marker(mapView);
+        marker.setPosition(currentLocation);
+        marker.setTitle("You are here!");
+        mapView.getOverlays().add(marker);
+
+        Toast.makeText(this, "Location: " + latitude + ", " + longitude, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDetach();
+    }
+
+
+
 
 // Registers the LocationListener to receive updates every second (1000ms)
 //      or when the device moves 1 meter.
     @Override
     protected void onResume() {
         super.onResume();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
-        }
+        requestLocationUpdates();
     }
 
-//Unregisters the LocationListener to save battery when the activity is not visible.
     @Override
     protected void onPause() {
         super.onPause();
@@ -78,9 +142,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
 
     @Override
     public void onLocationChanged(Location location) {
-        double longitude=location.getLongitude();
-        double latitude=location.getLatitude();
-        textview.setText("Longitude:   "+longitude+"\nLatitide:  "+latitude);
+        displayCurrentLocation(location);
     }
 
 //Called when a location provider (e.g., GPS) is enabled. Displays a toast message indicating that the provider is available.
@@ -94,5 +156,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     public void onProviderDisabled(String provider) {
         Toast.makeText(this, "Provider disabled: " + provider, Toast.LENGTH_SHORT).show();
     }
+
 }
 
