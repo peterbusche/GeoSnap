@@ -78,17 +78,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
 
 
         initializeSimulatedLocations();
+        startLocationTracking();
 
 
-        //get permissions to access device
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-            return;
-        } else {
-            startLocationTracking();
-        }
     }
 
+
+    // Predefined list of simulated locations (example coordinates)
     private void initializeSimulatedLocations() {
         // Predefined list of simulated locations (example coordinates)
         simulatedLocations = new ArrayList<>();
@@ -100,8 +96,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     }
 
 
+    //check permissions
     private void startLocationTracking() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            //triggers inherited methods from LocationListener (onLocationChanged())
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
             startPeriodicTracking();
         }
@@ -163,6 +161,36 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         mapView.invalidate(); //redraw the map
     }
 
+
+
+    private void updateLatLongTextView(double latitude, double longitude) {
+        String latLongText = String.format("Lat: %.5f, Long: %.5f", latitude, longitude);
+        latLongTextView.setText(latLongText);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDetach();
+        if (handler != null) {
+            handler.removeCallbacksAndMessages(null);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
@@ -174,12 +202,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
             // Display current location and dynamically adjust zoom
             displayCurrentLocation(newLocation);
 //            adjustZoomToFitAllMarkers();
-        }
-    }
-
-    private void requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
         }
     }
 
@@ -198,93 +220,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         updateLatLongTextView(location.getLatitude(), location.getLongitude());
     }
 
-//    private void displayCurrentLocation(Location location) {
-//        if (location == null) {
-//            Toast.makeText(this, "Unable to get location. Try again later.", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        double longitude = location.getLongitude();
-//        double latitude = location.getLatitude();
-//
-//        // Set current location
-//        currentLocation = new GeoPoint(latitude, longitude);
-//
-//        // Set map center and zoom level
-//        mapView.getController().setZoom(15.0);
-//        mapView.getController().setCenter(currentLocation);
-//
-//        // Update the marker
-//        if (currentMarker != null) {
-//            mapView.getOverlays().remove(currentMarker);
-//        }
-//
-//        // Add a marker for the current location
-//        Marker marker = new Marker(mapView);
-//        marker.setPosition(currentLocation);
-//        marker.setTitle("You are here!");
-//        mapView.getOverlays().add(marker);
-//
-//        // Add to tracked locations if tracking is active
-//        if (trackedLocations != null && !trackedLocations.contains(currentLocation)) {
-//            trackedLocations.add(currentLocation);
-//            updatePolyline();
-//        }
-//
-//        // Update the TextView with latitude and longitude
-//        updateLatLongTextView(latitude, longitude);
-//
-//        Toast.makeText(this, "Location: " + latitude + ", " + longitude, Toast.LENGTH_LONG).show();
-//    }
-
-    private void updatePolyline() {
-        // Update the polyline with all tracked locations
-        polyline.setPoints(trackedLocations);
-        mapView.invalidate(); // Redraw the map
-    }
-
-//    private void adjustZoomToFitAllMarkers() {
-//        if (trackedLocations.isEmpty()) {
-//            return;
-//        }
-//
-//        // Calculate a bounding box to fit all tracked locations
-//        double minLat = Double.MAX_VALUE, maxLat = Double.MIN_VALUE;
-//        double minLon = Double.MAX_VALUE, maxLon = Double.MIN_VALUE;
-//
-//        for (GeoPoint point : trackedLocations) {
-//            minLat = Math.min(minLat, point.getLatitude());
-//            maxLat = Math.max(maxLat, point.getLatitude());
-//            minLon = Math.min(minLon, point.getLongitude());
-//            maxLon = Math.max(maxLon, point.getLongitude());
-//        }
-//
-//        mapView.zoomToBoundingBox(
-//                new org.osmdroid.util.BoundingBox(maxLat, maxLon, minLat, minLon), true
-//        );
-//    }
-
-
-
-    private void updateLatLongTextView(double latitude, double longitude) {
-        String latLongText = String.format("Lat: %.5f, Long: %.5f", latitude, longitude);
-        latLongTextView.setText(latLongText);
-    }
-
-
-// Registers the LocationListener to receive updates every second (1000ms)
-//      or when the device moves 1 meter.
-    @Override
-    protected void onResume() {
-        super.onResume();
-        requestLocationUpdates();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        locationManager.removeUpdates(this);
-    }
 
 
 //Called when a location provider (e.g., GPS) is enabled. Displays a toast message indicating that the provider is available.
@@ -299,21 +234,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         Toast.makeText(this, "Provider disabled: " + provider, Toast.LENGTH_SHORT).show();
     }
 
-//    @Override
-//    protected void onDestroy() {
-//        super.onDestroy();
-//        mapView.onDetach();
-//    }
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mapView.onDetach();
-        if (handler != null) {
-            handler.removeCallbacksAndMessages(null);
-        }
-    }
 
 }
 
