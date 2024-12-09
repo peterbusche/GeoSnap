@@ -3,13 +3,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- OsmDroid MapView -->
-    <org.osmdroid.views.MapView
+    <!-- MapLibre MapView -->
+    <org.maplibre.android.maps.MapView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_alignParentTop="true"
-        android:layout_above="@id/latLongTextView" />
+        android:layout_above="@+id/latLongTextView" />
+
 
     <!-- TextView to display latitude and longitude -->
     <TextView
@@ -17,33 +18,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
+        android:layout_centerHorizontal="true"
         android:text="Lat: --, Long: --"
-        android:padding="16dp"
+        android:padding="12dp"
         android:textSize="16sp"
         android:background="#DDDDDD"
         android:gravity="center"
         android:layout_margin="8dp" />
 </RelativeLayout>
-
-
-
-
-
-
-
-
-<!--
-Purpose: res/layout folder Defines the structure and appearance of the app's UI.
-
-Role in activity_main.xml:
-    Contains the layout for MainActivity.
-    Defines UI elements like buttons, text views, and input fields.
-
-
-Additional Layout Files:
-    If your app has multiple screens, each screen will have its own XML layout file
-        (e.g., activity_second.xml).
-    You may create reusable UI components in separate layout files
-        (e.g., custom_button.xml) and include them where needed.
--->

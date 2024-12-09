@@ -8,14 +8,17 @@ pluginManagement {
             }
         }
         mavenCentral()
+//        maven { url "https://repo.osgeo.org/repository/release" } // Ensures access to OSGeo repository
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+//        maven { url "https://repo.osgeo.org/repository/release" } // Ensures the MapLibre library is accessible
     }
 }
 
