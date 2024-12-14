@@ -6,6 +6,7 @@ import android.Manifest;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Button;
 import android.view.LayoutInflater;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -26,7 +27,7 @@ import org.maplibre.android.maps.MapLibreMap;
 import org.maplibre.android.maps.MapView;
 import org.maplibre.android.maps.OnMapReadyCallback;
 import org.maplibre.android.maps.Style;
-
+import org.maplibre.android.camera.CameraUpdateFactory;
 
 import org.maplibre.android.snapshotter.MapSnapshot;
 import org.maplibre.android.snapshotter.MapSnapshotter;
@@ -37,13 +38,22 @@ import android.os.Environment;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.graphics.Bitmap.CompressFormat;
+import android.os.Environment;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+
 
 
 
 public class MainActivity extends AppCompatActivity implements LocationListener{
 
+    private static final String TAG = "MyAppLogs";
     private MapView mapView;
     private TextView latLongTextView;
+    private Button zoomInButton, zoomOutButton, snapshotButton;
     private MapLibreMap mapLibreMap;
     private LocationManager locationManager;
     private Handler handler;
@@ -71,30 +81,181 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         // Initialize UI
         mapView = findViewById(R.id.mapView);
         latLongTextView = findViewById(R.id.latLongTextView);
+        zoomInButton = findViewById(R.id.zoom_in_button);
+        zoomOutButton = findViewById(R.id.zoom_out_button);
+        snapshotButton = findViewById(R.id.snapshot_button);
         mapView.onCreate(savedInstanceState);
 
         // Initialize tracking structures
         trackedLocations = new ArrayList<>();
 
-        // Set up the map with the desired style
-        mapView.getMapAsync(new OnMapReadyCallback() {
-            @Override
-            public void onMapReady(MapLibreMap map) {
-                mapLibreMap = map;
-                mapLibreMap.setStyle(new Style.Builder().fromUri(styleUrl), new Style.OnStyleLoaded() {
-                    @Override
-                    public void onStyleLoaded(@NonNull Style style) {
-                        if (useSimulatedData) {
-                            initializeSimulatedLocations();
-                            startSimulatedTracking();
-                        } else {
-                            checkAndRequestPermissions();
-                        }
-                    }
-                });
+
+        //LAMBDA
+        mapView.getMapAsync(map -> {
+            mapLibreMap = map;
+            mapLibreMap.setStyle(new Style.Builder().fromUri(styleUrl), style -> {
+                mapLibreMap.getUiSettings().setZoomGesturesEnabled(true); // Enable zoom gestures
+                mapLibreMap.getUiSettings().setScrollGesturesEnabled(true); // Enable scrolling
+                mapLibreMap.getUiSettings().setDoubleTapGesturesEnabled(true); // Enable double-tap zoom
+
+
+
+                if (useSimulatedData) {
+                    initializeSimulatedLocations();
+                    startSimulatedTracking();
+                } else {
+                    checkAndRequestPermissions();
+                }
+            });
+        });
+
+
+        // Set up snapshot button click listener
+        snapshotButton.setOnClickListener(v -> {
+            if (mapLibreMap != null) {
+                takeSnapshot();
             }
         });
+
+        // Set up zoom button click listeners
+        zoomInButton.setOnClickListener(v -> {
+            if (mapLibreMap != null) {
+                CameraPosition currentPosition = mapLibreMap.getCameraPosition();
+                CameraPosition newPosition = new CameraPosition.Builder(currentPosition)
+                        .zoom(currentPosition.zoom + 1) // Increase zoom level
+                        .build();
+                mapLibreMap.setCameraPosition(newPosition);
+            }
+        });
+
+        zoomOutButton.setOnClickListener(v -> {
+            if (mapLibreMap != null) {
+                CameraPosition currentPosition = mapLibreMap.getCameraPosition();
+                CameraPosition newPosition = new CameraPosition.Builder(currentPosition)
+                        .zoom(currentPosition.zoom - 1) // Decrease zoom level
+                        .build();
+                mapLibreMap.setCameraPosition(newPosition);
+            }
+        });
+
     }
+            /*
+        ANONYMOUS CLASSES:
+            1)Functional Interface
+                ex1) mapView.getMapAsync(new OnMapReadyCallback() {
+                    -If working with a FUNCTIONAL INTERFACE:
+                        -will only have single abstract method to worry about
+                        -for example, Runnable() interface
+
+            2)Not Functional Interface
+                -Must implement all abstract methods of the interface or abstract class
+
+
+        LAMBDA EXPRESSIONS:
+            1)CAN ONLY BE USED WITH FUNCTIONAL INTERFACES
+        */
+
+
+
+
+
+
+
+//    // Method to take a snapshot
+//    private void takeSnapshot() {
+//        Toast.makeText(this, "Snap Taken!", Toast.LENGTH_SHORT).show();
+//        if (mapLibreMap == null) {
+//            Log.e("Snapshot", "MapLibreMap is not initialized.");
+//            return;
+//        }
+//
+//        Log.e(TAG, "Here");
+//        // Define the region for the snapshot
+//        LatLngBounds bounds = new LatLngBounds.Builder()
+//                .include(new LatLng(43.6150, -116.2023)) // Example region
+//                .include(new LatLng(43.6220, -116.2078)) // Example region
+//                .build();
+//
+//        Log.e(TAG, "Here1");
+//        // Create a camera position for the snapshot
+//        CameraPosition position = new CameraPosition.Builder()
+//                .target(new LatLng(43.6150, -116.2023)) // Center point
+//                .zoom(15.0) // Zoom level
+//                .build();
+//
+//        Log.e(TAG, "Here2");
+//        // Configure snapshot options
+//        MapSnapshotter.Options options = new MapSnapshotter.Options(800, 800)
+//                .withStyle(mapLibreMap.getStyle().getUri()) // Use the current style
+//                .withRegion(bounds) // Specify the region
+//                .withCameraPosition(position) // Specify the camera position
+//                .withLogo(false); // Disable logo if preferred
+//
+//        Log.e(TAG, "Here3");
+//        // Create the snapshotter
+//        MapSnapshotter snapshotter = new MapSnapshotter(this, options);
+//
+//        Log.e(TAG, "Here4");
+//        // Start the snapshot
+//        snapshotter.start(new MapSnapshotter.SnapshotReadyCallback() {
+//            @Override
+//            public void onSnapshotReady(MapSnapshot snapshot) {
+//                Log.e(TAG, "Here4.1");
+//                Bitmap bitmap = snapshot.getBitmap();
+//                Log.e(TAG, "Here4.2");
+//                // Save the bitmap to a file
+//                saveSnapshotToFile(bitmap);
+//                Log.e(TAG, "Here4.3");
+//            }
+//        });
+//        Log.e(TAG, "Here5");
+//    }
+
+
+
+    // Method to save the bitmap to a file
+    private void saveSnapshotToFile(Bitmap snapshot) {
+        Log.e(TAG, "Here6");
+        // Directory to save the snapshot
+        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "MapSnapshots");
+        if (!directory.exists()) {
+            Log.e(TAG, "Here7");
+            directory.mkdirs(); // Create the directory if it doesn't exist
+        }
+
+        // File name for the snapshot
+        String fileName = "snapshot_" + System.currentTimeMillis() + ".png";
+        File file = new File(directory, fileName);
+
+        FileOutputStream fileOutputStream = null;
+        try {
+            Log.e(TAG, "Here8");
+            fileOutputStream = new FileOutputStream(file);
+            // Compress the bitmap and save it as a PNG
+            snapshot.compress(CompressFormat.PNG, 100, fileOutputStream);
+            fileOutputStream.flush();
+            Toast.makeText(this, "Snapshot saved: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            Log.e(TAG, "Here9");
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to save snapshot", Toast.LENGTH_SHORT).show();
+        } finally {
+            Log.e(TAG, "Here10");
+            if (fileOutputStream != null) {
+                try {
+                    Log.e(TAG, "Here11");
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Here12");
+                    e.printStackTrace();
+                }
+            }
+        }
+        Log.e(TAG, "Here13");
+    }
+
+
+
 
     private void initializeSimulatedLocations() {
         trackedLocations.add(new LatLng(43.6150, -116.2023)); // Boise

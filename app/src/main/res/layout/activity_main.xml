@@ -9,20 +9,60 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/latLongTextView" />
-
+        android:layout_above="@+id/snapshot_button" />
 
     <!-- TextView to display latitude and longitude -->
     <TextView
         android:id="@+id/latLongTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
+        android:layout_above="@id/snapshot_button"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="16dp"
         android:text="Lat: --, Long: --"
         android:padding="12dp"
         android:textSize="16sp"
-        android:background="#DDDDDD"
-        android:gravity="center"
-        android:layout_margin="8dp" />
+        android:background="#800080"
+        android:textColor="#FFFFFF"
+        android:gravity="center" />
+
+    <!-- Zoom Controls -->
+    <LinearLayout
+        android:id="@+id/zoom_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Zoom In Button -->
+        <Button
+            android:id="@+id/zoom_in_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:text="+" />
+
+        <!-- Zoom Out Button -->
+        <Button
+            android:id="@+id/zoom_out_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:text="-" />
+    </LinearLayout>
+
+    <!-- Snapshot Button -->
+    <Button
+        android:id="@+id/snapshot_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:text="Snap" />
+
 </RelativeLayout>
