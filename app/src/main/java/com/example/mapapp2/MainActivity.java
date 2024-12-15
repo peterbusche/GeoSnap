@@ -1,8 +1,10 @@
 package com.example.mapapp2;
+import com.example.mapapp2.SnapshotHandler;
 
 import com.example.mapapp2.BuildConfig;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -39,24 +41,42 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.graphics.Bitmap.CompressFormat;
-import android.os.Environment;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.view.View;
+
+import android.content.res.AssetManager;
+import android.graphics.BitmapFactory;
+import java.io.InputStream;
+import android.view.View;
+import android.view.ViewTreeObserver;
 
 
 
 
-public class MainActivity extends AppCompatActivity implements LocationListener{
+public class MainActivity extends AppCompatActivity implements LocationListener {
 
     private static final String TAG = "MyAppLogs";
     private MapView mapView;
-    private TextView latLongTextView;
-    private Button zoomInButton, zoomOutButton, snapshotButton;
     private MapLibreMap mapLibreMap;
     private LocationManager locationManager;
     private Handler handler;
+
+
+    //.xml button variables
+    private TextView latLongTextView;
+    private Button zoomInButton, zoomOutButton, snapshotButton, closeSnapshotButton, imageButton, closeImageButton;
+    FrameLayout snapshotContainer, imageContainer;
+    ImageView snapshotImageView, imageImageView;
+    private MapSnapshotter mapSnapshotter;
+    private ImageHandler imageHandler;
+
+
+    //tracking data variables
     private List<LatLng> trackedLocations;
     private boolean useSimulatedData = false;
     private int simulatedIndex=0;
@@ -68,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         // Get the API Key from BuildConfig
         String apiKey = BuildConfig.MAPTILER_API_KEY;
 
-        //get style from website
+        // Get style from website
         String mapId = "topo-v2";
         String styleUrl = "https://api.maptiler.com/maps/" + mapId + "/style.json?key=" + apiKey;
 
@@ -78,27 +98,40 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         // Inflate the layout
         setContentView(R.layout.activity_main);
 
-        // Initialize UI
+        // Initialize UI components
         mapView = findViewById(R.id.mapView);
+
+        snapshotContainer = findViewById(R.id.snapshot_container);
+        snapshotImageView = findViewById(R.id.snapshotImageView);
+        imageContainer = findViewById(R.id.image_container);
+        imageImageView = findViewById(R.id.imageImageView);
+
         latLongTextView = findViewById(R.id.latLongTextView);
         zoomInButton = findViewById(R.id.zoom_in_button);
         zoomOutButton = findViewById(R.id.zoom_out_button);
         snapshotButton = findViewById(R.id.snapshot_button);
+        closeSnapshotButton = findViewById(R.id.close_snapshot_button);
+        imageButton = findViewById(R.id.image_button);
+        closeImageButton = findViewById(R.id.close_image_button);
+
+        imageHandler = new ImageHandler(this);
+
+
+        // Validate UI components
+        if (snapshotContainer == null || snapshotImageView == null) {
+            Log.e(TAG, "Snapshot components are not properly initialized.");
+            return;
+        }
+
         mapView.onCreate(savedInstanceState);
 
-        // Initialize tracking structures
-        trackedLocations = new ArrayList<>();
-
-
-        //LAMBDA
+        // Initialize the map
         mapView.getMapAsync(map -> {
             mapLibreMap = map;
             mapLibreMap.setStyle(new Style.Builder().fromUri(styleUrl), style -> {
-                mapLibreMap.getUiSettings().setZoomGesturesEnabled(true); // Enable zoom gestures
-                mapLibreMap.getUiSettings().setScrollGesturesEnabled(true); // Enable scrolling
-                mapLibreMap.getUiSettings().setDoubleTapGesturesEnabled(true); // Enable double-tap zoom
-
-
+                mapLibreMap.getUiSettings().setZoomGesturesEnabled(true);
+                mapLibreMap.getUiSettings().setScrollGesturesEnabled(true);
+                mapLibreMap.getUiSettings().setDoubleTapGesturesEnabled(true);
 
                 if (useSimulatedData) {
                     initializeSimulatedLocations();
@@ -110,151 +143,68 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
         });
 
 
-        // Set up snapshot button click listener
+
+
+        // Set up the snapshot button functionality
         snapshotButton.setOnClickListener(v -> {
-            if (mapLibreMap != null) {
-                takeSnapshot();
-            }
+            Intent intent = new Intent(MainActivity.this, SnapshotHandler.class);
+            startActivity(intent); // Start the SnapshotHandler activity
         });
 
-        // Set up zoom button click listeners
+        // Set up close button
+        closeSnapshotButton.setOnClickListener(v -> {
+            snapshotContainer.setVisibility(View.GONE);
+            snapshotImageView.setImageBitmap(null); // Clear the bitmap
+        });
+
+
+
+
+
+        imageButton.setOnClickListener(v -> imageHandler.displayImage("nakedmolerat-001.jpg", imageContainer, imageImageView));
+        closeImageButton.setOnClickListener(v -> imageHandler.closeImage(imageContainer, imageImageView));
+        // Set up the IMAGE button functionality
+//        imageButton.setOnClickListener(v -> {
+//            try {
+//                // Load the image from the assets folder
+//                AssetManager assetManager = getAssets();
+//                InputStream inputStream = assetManager.open("nakedmolerat-001.jpg"); // Replace with your image name
+//                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+//
+//                // Set the image in the ImageView
+//                imageImageView.setImageBitmap(bitmap);
+//
+//                // Show the snapshot container
+//                imageContainer.setVisibility(View.VISIBLE);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                Log.e(TAG, "Failed to load image from assets: ");
+//            }
+//        });
+//
+//        // Set up close button
+//        closeImageButton.setOnClickListener(v -> {
+//            imageContainer.setVisibility(View.GONE);
+//            imageImageView.setImageBitmap(null); // Clear the bitmap
+//        });
+
+
+
+        // Set up zoom buttons
         zoomInButton.setOnClickListener(v -> {
             if (mapLibreMap != null) {
                 CameraPosition currentPosition = mapLibreMap.getCameraPosition();
-                CameraPosition newPosition = new CameraPosition.Builder(currentPosition)
-                        .zoom(currentPosition.zoom + 1) // Increase zoom level
-                        .build();
-                mapLibreMap.setCameraPosition(newPosition);
+                mapLibreMap.setCameraPosition(new CameraPosition.Builder(currentPosition).zoom(currentPosition.zoom + 1).build());
             }
         });
 
         zoomOutButton.setOnClickListener(v -> {
             if (mapLibreMap != null) {
                 CameraPosition currentPosition = mapLibreMap.getCameraPosition();
-                CameraPosition newPosition = new CameraPosition.Builder(currentPosition)
-                        .zoom(currentPosition.zoom - 1) // Decrease zoom level
-                        .build();
-                mapLibreMap.setCameraPosition(newPosition);
+                mapLibreMap.setCameraPosition(new CameraPosition.Builder(currentPosition).zoom(currentPosition.zoom - 1).build());
             }
         });
-
     }
-            /*
-        ANONYMOUS CLASSES:
-            1)Functional Interface
-                ex1) mapView.getMapAsync(new OnMapReadyCallback() {
-                    -If working with a FUNCTIONAL INTERFACE:
-                        -will only have single abstract method to worry about
-                        -for example, Runnable() interface
-
-            2)Not Functional Interface
-                -Must implement all abstract methods of the interface or abstract class
-
-
-        LAMBDA EXPRESSIONS:
-            1)CAN ONLY BE USED WITH FUNCTIONAL INTERFACES
-        */
-
-
-
-
-
-
-
-//    // Method to take a snapshot
-//    private void takeSnapshot() {
-//        Toast.makeText(this, "Snap Taken!", Toast.LENGTH_SHORT).show();
-//        if (mapLibreMap == null) {
-//            Log.e("Snapshot", "MapLibreMap is not initialized.");
-//            return;
-//        }
-//
-//        Log.e(TAG, "Here");
-//        // Define the region for the snapshot
-//        LatLngBounds bounds = new LatLngBounds.Builder()
-//                .include(new LatLng(43.6150, -116.2023)) // Example region
-//                .include(new LatLng(43.6220, -116.2078)) // Example region
-//                .build();
-//
-//        Log.e(TAG, "Here1");
-//        // Create a camera position for the snapshot
-//        CameraPosition position = new CameraPosition.Builder()
-//                .target(new LatLng(43.6150, -116.2023)) // Center point
-//                .zoom(15.0) // Zoom level
-//                .build();
-//
-//        Log.e(TAG, "Here2");
-//        // Configure snapshot options
-//        MapSnapshotter.Options options = new MapSnapshotter.Options(800, 800)
-//                .withStyle(mapLibreMap.getStyle().getUri()) // Use the current style
-//                .withRegion(bounds) // Specify the region
-//                .withCameraPosition(position) // Specify the camera position
-//                .withLogo(false); // Disable logo if preferred
-//
-//        Log.e(TAG, "Here3");
-//        // Create the snapshotter
-//        MapSnapshotter snapshotter = new MapSnapshotter(this, options);
-//
-//        Log.e(TAG, "Here4");
-//        // Start the snapshot
-//        snapshotter.start(new MapSnapshotter.SnapshotReadyCallback() {
-//            @Override
-//            public void onSnapshotReady(MapSnapshot snapshot) {
-//                Log.e(TAG, "Here4.1");
-//                Bitmap bitmap = snapshot.getBitmap();
-//                Log.e(TAG, "Here4.2");
-//                // Save the bitmap to a file
-//                saveSnapshotToFile(bitmap);
-//                Log.e(TAG, "Here4.3");
-//            }
-//        });
-//        Log.e(TAG, "Here5");
-//    }
-
-
-
-    // Method to save the bitmap to a file
-    private void saveSnapshotToFile(Bitmap snapshot) {
-        Log.e(TAG, "Here6");
-        // Directory to save the snapshot
-        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "MapSnapshots");
-        if (!directory.exists()) {
-            Log.e(TAG, "Here7");
-            directory.mkdirs(); // Create the directory if it doesn't exist
-        }
-
-        // File name for the snapshot
-        String fileName = "snapshot_" + System.currentTimeMillis() + ".png";
-        File file = new File(directory, fileName);
-
-        FileOutputStream fileOutputStream = null;
-        try {
-            Log.e(TAG, "Here8");
-            fileOutputStream = new FileOutputStream(file);
-            // Compress the bitmap and save it as a PNG
-            snapshot.compress(CompressFormat.PNG, 100, fileOutputStream);
-            fileOutputStream.flush();
-            Toast.makeText(this, "Snapshot saved: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            Log.e(TAG, "Here9");
-            e.printStackTrace();
-            Toast.makeText(this, "Failed to save snapshot", Toast.LENGTH_SHORT).show();
-        } finally {
-            Log.e(TAG, "Here10");
-            if (fileOutputStream != null) {
-                try {
-                    Log.e(TAG, "Here11");
-                    fileOutputStream.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Here12");
-                    e.printStackTrace();
-                }
-            }
-        }
-        Log.e(TAG, "Here13");
-    }
-
-
 
 
     private void initializeSimulatedLocations() {
@@ -389,3 +339,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener{
     }
 }
 
+            /*
+        ANONYMOUS CLASSES:
+            1)Functional Interface
+                ex1) mapView.getMapAsync(new OnMapReadyCallback() {
+                    -If working with a FUNCTIONAL INTERFACE:
+                        -will only have single abstract method to worry about
+                        -for example, Runnable() interface
+
+            2)Not Functional Interface
+                -Must implement all abstract methods of the interface or abstract class
+
+
+        LAMBDA EXPRESSIONS:
+            1)CAN ONLY BE USED WITH FUNCTIONAL INTERFACES
+        */
