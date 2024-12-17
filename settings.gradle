@@ -8,7 +8,7 @@ pluginManagement {
             }
         }
         mavenCentral()
-//        maven { url "https://repo.osgeo.org/repository/release" } // Ensures access to OSGeo repository
+        maven { url 'https://api.mapbox.com/downloads/v2/releases/maven' }
         gradlePluginPortal()
     }
 }
@@ -18,9 +18,15 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-//        maven { url "https://repo.osgeo.org/repository/release" } // Ensures the MapLibre library is accessible
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            credentials {
+                username = "mapbox"
+                password = "pk.eyJ1IjoicGV0ZXJidXNjaGUiLCJhIjoiY200c3R2OHprMDRsbTJpcHozZ212Z21scSJ9.puoGKcVnP_LehVIUsP6grg"
+            }
+        }
     }
 }
 
-rootProject.name = "MapApp2"
+rootProject.name = "YourProjectName"
 include ':app'

@@ -28,9 +28,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Snapshot activity -->
-        <activity android:name=".SnapshotHandler" />
-
     </application>
 
 </manifest>

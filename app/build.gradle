@@ -14,8 +14,6 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField "String", "MAPTILER_API_KEY", "${MAPTILER_API_KEY}"
     }
 
     buildFeatures {
@@ -35,10 +33,15 @@ android {
 }
 
 dependencies {
+    // AndroidX dependencies
     implementation libs.appcompat
     implementation libs.material
-    implementation 'org.osmdroid:osmdroid-android:6.1.11'
-    implementation 'org.maplibre.gl:android-sdk:11.5.2' // Latest stable version
+
+    // Mapbox Maps SDK
+    implementation 'com.mapbox.maps:android:10.15.0'
+    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-services:5.7.0'
+
+    // Testing dependencies
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
