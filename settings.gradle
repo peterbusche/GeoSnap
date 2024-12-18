@@ -28,5 +28,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "YourProjectName"
+rootProject.name = "MapApp2"
 include ':app'

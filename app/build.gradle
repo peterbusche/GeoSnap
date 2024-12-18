@@ -40,6 +40,7 @@ dependencies {
     // Mapbox Maps SDK
     implementation 'com.mapbox.maps:android:10.15.0'
     implementation 'com.mapbox.mapboxsdk:mapbox-sdk-services:5.7.0'
+//    implementation 'com.mapbox.plugin:annotation:10.2.0'
 
     // Testing dependencies
     testImplementation libs.junit
