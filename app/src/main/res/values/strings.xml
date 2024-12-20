@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">MapApp2</string>
-    <string name="mapbox_access_token">pk.eyJ1IjoicGV0ZXJidXNjaGUiLCJhIjoiY200c3R2OHprMDRsbTJpcHozZ212Z21scSJ9.puoGKcVnP_LehVIUsP6grg</string>
+<!--    <string name="mapbox_access_token">sk.eyJ1IjoicGV0ZXJidXNjaGUiLCJhIjoiY200dWJjYms3MGlxeTJrcHRmNXFlaXdqdCJ9.Y0zL0GvRoH_AyMcCNZj1-w</string>-->
+    <string name="title_activity_maps">MapsActivity</string>
 </resources>
