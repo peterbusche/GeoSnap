@@ -13,6 +13,17 @@ import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.Button;
 import android.view.View;
+import android.graphics.Bitmap;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Environment;
+
+
+//java
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 
 
 //google imports
@@ -123,6 +134,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (bitmap != null) {
                             snapshotImage.setImageBitmap(bitmap);
                             snapshotContainer.setVisibility(View.VISIBLE);
+
+                            // Save the bitmap to the Pictures directory
+                            saveSnapshotToPictures(bitmap);
                         }
                     });
                 }
@@ -134,6 +148,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             });
         }
     }
+
+
+    private void saveSnapshotToPictures(Bitmap bitmap) {
+        // Save to the public Pictures directory
+        File picturesDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "MapSnapshots");
+        if (!picturesDir.exists()) {
+            picturesDir.mkdirs(); // Create the directory if it doesn't exist
+        }
+
+        // Create a file for the snapshot
+        String fileName = "MapSnapshot_" + System.currentTimeMillis() + ".png";
+        File snapshotFile = new File(picturesDir, fileName);
+
+        try (FileOutputStream fos = new FileOutputStream(snapshotFile)) {
+            // Compress the bitmap and write to the file
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.flush();
+
+            // Notify the media scanner to index the file
+            notifyMediaScanner(snapshotFile);
+
+            Toast.makeText(this, "Snapshot saved to: " + snapshotFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            Log.i(TAG,"Snapshot saved to: " + snapshotFile.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e(TAG, "Error saving snapshot: ", e);
+            Toast.makeText(this, "Error saving snapshot", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void notifyMediaScanner(File file) {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        mediaScanIntent.setData(Uri.fromFile(file));
+        sendBroadcast(mediaScanIntent);
+        Log.i(TAG,"Media Scanner ...");
+    }
+
+
+
 
 
 
