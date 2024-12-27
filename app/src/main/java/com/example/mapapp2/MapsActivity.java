@@ -36,7 +36,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 
-
+//API imports
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -46,6 +49,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private FrameLayout snapshotContainer;
     private ImageView snapshotImage;
     private Button closeSnapshotButton;
+    ApiService apiService;
 
 
     @Override
@@ -54,6 +58,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        apiService = ApiClient.getClient().create(ApiService.class);
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -72,6 +78,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Button zoomInButton = findViewById(R.id.zoom_in_button);
         Button zoomOutButton = findViewById(R.id.zoom_out_button);
         Button snapButton = findViewById(R.id.snap_button);
+        Button apiButton = findViewById(R.id.api_button);
+        apiButton.setOnClickListener(v -> fetchDataFromApi());
 
         snapButton.setOnClickListener(v -> takeSnapshot());
 
@@ -99,6 +107,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    private void fetchDataFromApi() {
+        Call<PingResponse> call = apiService.pingServer();
+
+        call.enqueue(new Callback<PingResponse>() {
+            @Override
+            public void onResponse(Call<PingResponse> call, Response<PingResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    PingResponse data = response.body();
+                    Log.d(TAG, "API Response: " + data.getStatus() + ",  " + data.getMessage());
+                } else {
+                    Log.e(TAG, "API Error: Response Code = " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PingResponse> call, Throwable t) {
+                Log.e(TAG, "API Error: " + t.getMessage());
+            }
+        });
+    }
+
+
+
+
+
+
+
+
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -119,8 +155,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         initialCameraPosition();
     }
-
-
 
     private void takeSnapshot() {
         if (mMap != null) {
@@ -183,12 +217,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         sendBroadcast(mediaScanIntent);
         Log.i(TAG,"Media Scanner ...");
     }
-
-
-
-
-
-
 
     private void initialCameraPosition() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
