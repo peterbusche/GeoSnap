@@ -17,6 +17,8 @@ import android.graphics.Bitmap;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.provider.MediaStore;
 
 
 //java
@@ -50,6 +52,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private ImageView snapshotImage;
     private Button closeSnapshotButton;
     ApiService apiService;
+    private MediaObserver mediaObserver;
 
 
     @Override
@@ -65,6 +68,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+
+        Handler handler = new Handler();
+        mediaObserver = new MediaObserver(handler, getContentResolver(), photoUri -> {
+            // Save the photo to your app's database
+            savePhotoToDatabase(photoUri);
+        });
+
+        getContentResolver().registerContentObserver(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                true,
+                mediaObserver
+        );
+
+
+
+
+
+
 
 
 
@@ -88,7 +110,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             snapshotImage.setImageBitmap(null); // Clear the image
         });
 
-
         // Set click listeners
         zoomInButton.setOnClickListener(v -> {
             if (mMap != null) {
@@ -102,9 +123,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+    }
 
-
-
+    private void savePhotoToDatabase(Uri photoUri) {
+        Log.i(TAG, "New photo detected: " + photoUri.toString());
+        // Add logic to save the photo URI or image data to your app's database
     }
 
     private void fetchDataFromApi() {
@@ -127,12 +150,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
-
-
-
-
-
-
 
 
     /**
@@ -241,5 +258,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Unregister the MediaObserver
+        getContentResolver().unregisterContentObserver(mediaObserver);
     }
 }
