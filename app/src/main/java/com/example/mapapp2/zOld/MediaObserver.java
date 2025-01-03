@@ -1,4 +1,4 @@
-package com.example.mapapp2;
+package com.example.mapapp2.zOld;
 
 import android.content.ContentResolver;
 import android.database.ContentObserver;
@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.util.Log;
 
 public class MediaObserver extends ContentObserver {
 

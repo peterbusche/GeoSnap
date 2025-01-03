@@ -1,4 +1,5 @@
-package com.example.mapapp2;
+package com.example.mapapp2.zOld;
+import com.example.mapapp2.R;
 import com.example.mapapp2.databinding.ActivityMapsBinding;
 
 //anroid imports
@@ -19,6 +20,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.content.SharedPreferences;
 
 
 //java
@@ -34,7 +36,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 
@@ -57,19 +58,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //initialize map
         super.onCreate(savedInstanceState);
+
+
+
+    // Check for authentication token
+        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
+        String token = prefs.getString("token", null);
+
+        if (token == null) {
+            Log.i(TAG, "Go To LoginActivity");
+            // Redirect to LoginActivity if not logged in
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+            finish(); // Prevent the user from returning to this activity without logging in
+            Log.i(TAG, "Exit App");
+            return; // Stop further execution
+        }
+        Log.d("MapsActivity", "Initialization successful.");
+        // Initialize the map
+
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         apiService = ApiClient.getClient().create(ApiService.class);
 
-
+        //SHOWS MAPS ON PAGE
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
 
+
+        //TEMP-HANDLES HOW TO AUTOMATICALLY SEND PHOTOS TAKEN BY CAMERA TO DATABASE
         Handler handler = new Handler();
         mediaObserver = new MediaObserver(handler, getContentResolver(), photoUri -> {
             // Save the photo to your app's database
@@ -81,6 +102,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 true,
                 mediaObserver
         );
+
 
 
 
@@ -262,6 +284,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onDestroy() {
         super.onDestroy();
         // Unregister the MediaObserver
-        getContentResolver().unregisterContentObserver(mediaObserver);
+        // Unregister mediaObserver safely
+        if (mediaObserver != null) {
+            getContentResolver().unregisterContentObserver(mediaObserver);
+            mediaObserver = null; // Optional, clear the reference
+        }
     }
 }

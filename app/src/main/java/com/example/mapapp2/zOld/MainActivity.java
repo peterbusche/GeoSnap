@@ -7,7 +7,7 @@ THIS NEEDS TO BE IMPLEMENTED
     -Will implement this after I create database and Ruby API?
  */
 
-package com.example.mapapp2;
+package com.example.mapapp2.zOld;
 
 
 import android.Manifest;
@@ -20,6 +20,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+
+import com.example.mapapp2.R;
 
 public class MainActivity extends AppCompatActivity {
     private TelephonyManager telephonyManager;
