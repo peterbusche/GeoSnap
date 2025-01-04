@@ -1,3 +1,6 @@
+
+
+
 package com.example.mapapp2.zOld;
 import com.example.mapapp2.R;
 import com.example.mapapp2.databinding.ActivityMapsBinding;
@@ -125,6 +128,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             snapshotContainer.setVisibility(View.GONE);
             snapshotImage.setImageBitmap(null); // Clear the image
         });
+
 
         // Set click listeners
         zoomInButton.setOnClickListener(v -> {
