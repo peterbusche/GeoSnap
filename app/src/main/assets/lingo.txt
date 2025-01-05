@@ -1,0 +1,24 @@
+*Bottom Sheet   -> like google maps
+Bottom Toolbar
+Bottom Navigation
+*Floating Action Buttons  -> Zoom in/out
+
+=======ENVIRONMENT VARIABLES LIST=============
+PS C:\Users\peter\AndroidStudioProjects\MapApp2> $env:PATH -split ";"
+
+
+=======USE EXIFtool===========
+PS C:\Users\peter\AndroidStudioProjects\MapApp2> & "C:\Program Files\ExifTool\exiftool-13.11_64\exiftool.exe" -ver
+
+PS C:\Users\peter\AndroidStudioProjects\MapApp2> exiftool -ver
+13.11
+
+PS C:\Users\peter\AndroidStudioProjects\MapApp2> exiftool "C:\Users\peter\AndroidStudioProjects\MapApp2\app\src\main\assets\1.jpg"
+
+
+========ADB=========
+==Created folder /sdcard/DCIM/Camera
+==Uploaded images to that folder
+==Added /Sdk/Platform-tools to system path to use ADB
+
+PS C:\Users\peter\AndroidStudioProjects\MapApp2> adb shell am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/DCIM/Camera/
