@@ -26,6 +26,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -63,14 +64,23 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        requestStoragePermission();
 
-        // Request storage permissions
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
-            Log.i(TAG, "EXIF EXTRACTOR: Failed Permissions");
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Show rationale if necessary
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                Toast.makeText(this, "Storage permission is needed to access photos.", Toast.LENGTH_SHORT).show();
+            }
+
+            // Request permission
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_STORAGE_PERMISSION);
         } else {
-            Log.i(TAG, "EXIF EXTRACTOR: Passed Permissions round 1");
+            // Permission already granted
+            Log.i(TAG, "Permission already granted");
             testEXIFExtractor();
         }
 
@@ -114,11 +124,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private void testEXIFExtractor() {
-        // Check for READ_EXTERNAL_STORAGE permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
-            return;
-        }
+//        // Check for READ_EXTERNAL_STORAGE permission
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
+//            return;
+//        }
 
         Log.i(TAG, "EXIF EXTRACTOR: Passed Permissions Round 2");
         // Query the MediaStore for images
@@ -157,29 +167,17 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void requestStoragePermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
-        }
-    }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         if (requestCode == REQUEST_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "EXIF EXTRACTOR: Permission Granted");
+                Log.i(TAG, "Permission granted");
                 testEXIFExtractor();
             } else {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                    // Show a rationale to the user
-                    Toast.makeText(this, "Storage permission is required to access images.", Toast.LENGTH_SHORT).show();
-                } else {
-                    // User denied with "Don't ask again"
-                    Toast.makeText(this, "Permission permanently denied. Enable it from settings.", Toast.LENGTH_LONG).show();
-                }
+                Log.i(TAG, "Permission denied");
+                Toast.makeText(this, "Permission is required to access photos.", Toast.LENGTH_SHORT).show();
             }
         }
     }
