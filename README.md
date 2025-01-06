@@ -26,7 +26,7 @@ GeoSnap is an Android application that displays user images on a Google Map with
     - There will be an option to save images to a S3 Bucket for cloud storage
      
 ### Login Screen
-![Login Screen](app/src/main/assets/Screenshot 2025-01-06 103733.png)
+![Login Screen](app/screenshots/Screenshot 2025-01-06 103733.png)
 
 ### Google Maps API
 ![Google Maps](app/src/main/assets/Screenshot 2025-01-06 103832.png)
