@@ -18,6 +18,7 @@ import com.example.mapapp2.models.PhotoMetadata;
 import com.example.mapapp2.repository.MetadataCacheRepository;
 import com.example.mapapp2.utils.FileUtils;
 import com.example.mapapp2.utils.EXIFExtractor;
+import com.example.mapapp2.utils.MetadataExample;
 
 import com.google.android.gms.maps.OnMapReadyCallback;
 
@@ -75,13 +76,12 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
 
             // Request permission
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    REQUEST_STORAGE_PERMISSION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
         } else {
             // Permission already granted
             Log.i(TAG, "Permission already granted");
-            testEXIFExtractor();
+            //testEXIFExtractor();
+            MetadataTest();
         }
 
 
@@ -123,14 +123,83 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    private void testEXIFExtractor() {
-//        // Check for READ_EXTERNAL_STORAGE permission
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
-//            return;
-//        }
+    private void MetadataTest() {
+        MetadataExample.extractMetadataFromMediaStore(this);
+    }
 
-        Log.i(TAG, "EXIF EXTRACTOR: Passed Permissions Round 2");
+
+
+    private void testEXIFExtractor(){
+        String testPath = "/storage/emulated/0/Pictures/1.jpg"; // Replace with the actual file path
+        double[] latLng = EXIFExtractor.extractLatLng(testPath);
+        if (latLng != null) {
+            Log.d(TAG, "Extracted Latitude: " + latLng[0] + ", Longitude: " + latLng[1]);
+        } else {
+            Log.d(TAG, "No GPS data found in: " + testPath);
+        }
+    }
+
+
+
+    private void testEXIFExtractor2() {
+        // Query MediaStore for all indexed images
+        String[] projection = {MediaStore.Images.Media.DATA};
+
+        Cursor cursor = getContentResolver().query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                null, // No selection filter
+                null, // No selection arguments
+                MediaStore.Images.Media.DATE_TAKEN + " DESC" // Sort by most recent
+        );
+
+        if (cursor == null) {
+            Log.d(TAG, "Cursor is null. No images found on the device.");
+            Toast.makeText(this, "No images found on the device.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            if (cursor.moveToFirst()) {
+                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+
+                do {
+                    String filePath = cursor.getString(dataColumn);
+                    Log.i(TAG, "Processing file: " + filePath);
+
+                    // Use EXIFExtractor to process the file
+                    File testFile = new File(filePath);
+                    if (testFile.exists()) {
+                        double[] latLng = EXIFExtractor.extractLatLng(filePath);
+                        if (latLng != null) {
+                            Log.d(TAG, "Extracted Latitude: " + latLng[0] + ", Longitude: " + latLng[1]);
+                            Toast.makeText(this, "File: " + filePath + "\nLatitude: " + latLng[0] + ", Longitude: " + latLng[1], Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d(TAG, "No GPS data found in the image: " + filePath);
+                        }
+                    } else {
+                        Log.e(TAG, "File does not exist or is inaccessible: " + filePath);
+                    }
+                } while (cursor.moveToNext());
+            } else {
+                Log.d(TAG, "No images found on the device.");
+                Toast.makeText(this, "No images found on the device.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing images: ", e);
+        } finally {
+            cursor.close();
+        }
+    }
+
+
+
+
+
+
+    private void testEXIFExtractor1() {
+
+        Log.i(TAG, "EXIF EXTRACTOR: START");
         // Query the MediaStore for images
         String[] projection = {MediaStore.Images.Media.DATA};
         Cursor cursor = getContentResolver().query(
