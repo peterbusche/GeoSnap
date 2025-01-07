@@ -14,16 +14,21 @@ GeoSnap is an Android application that displays user images on a Google Map with
 - Google maps 
 - User location permissions
 - Http connection to Ruby Api
+- External storage permissions
 
-## What isnt working
-- External storage and/or Share storage permissions
-- Test set EXIF metadata and mediastore indexing
+## What is broken
+- everything related to handling exif extraction/storage except MetadataExample.java test
 
 ## Current Status
-- Once I can either get external storage permissions working, or I can get the mediastore object to recognize upload images:
-    - I will implement a bottom sheet overlay on the google maps screen which will show a list of images from users Pictures folder
-    - Each image will have its GPS location marked on the google map with an annotation
-    - There will be an option to save images to a S3 Bucket for cloud storage
+-External storage permissions are now granted
+    -since app uses external storage permissions from before API 30+, it cannot be used on google play store
+        -in the future can get around this issue through this route: "select file from storage and copy that file into your app package chache com.android.myapp"
+            found in this thread: https://stackoverflow.com/questions/62782648/android-11-scoped-storage-permissions
+
+- Next, creating bottom sheet to view/sort images onto google map
+    - adding algorithms for image selection by album/day/week/moth/year
+- Adding annotations to map at image gps location
+    - hover over annotation to see image
      
 ### Login Screen
 ![Login Screen](https://github.com/peterbusche/GeoSnap/blob/main/Screenshot%202025-01-06%20103733.png?raw=true)
