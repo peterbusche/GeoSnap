@@ -1,7 +1,18 @@
 /*
-PROMPT/FORCE/MAKE users enable "save location" in Camera settings on their phone
+app needs to prompt/force/make users enable "save location" in Camera settings on their phone
     -otherwise GPS location data wont be there
+
+
+Followed this to get past external storage issues:
+    https://stackoverflow.com/questions/62782648/android-11-scoped-storage-permissions
+    -i dont think i can put this on google play store now because of this. Below is a suggestion
+        for getting around this, but it needs much more code.
+    -"Android 11 doesn't allow to access directly files from storage you must have to select file
+        from storage and copy that file into your app package chache com.android.myapp. Below is the
+        method to copy file from storage to app package cache"
  */
+
+
 
 package com.example.mapapp2.ui;
 

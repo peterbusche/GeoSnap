@@ -1,3 +1,10 @@
+/*
+Followed this to get past external storage issues:
+https://stackoverflow.com/questions/62782648/android-11-scoped-storage-permissions
+
+ */
+
+
 package com.example.mapapp2.utils;
 
 import android.content.ContentResolver;
