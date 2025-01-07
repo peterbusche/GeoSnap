@@ -5,6 +5,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
 import android.util.Log;
 
@@ -12,20 +13,31 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifDirectoryBase;
-import com.drew.metadata.exif.GpsDirectory;
 
 import java.io.InputStream;
 
 public class MetadataExample {
+
     private static final String TAG = "MetadataExample";
 
-    /**
-     * Extract GPS metadata from images in MediaStore.
-     *
-     * @param context Application context for accessing ContentResolver.
-     */
     public static void extractMetadataFromMediaStore(Context context) {
-        Uri collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        Uri[] collections;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            collections = new Uri[]{
+                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY),
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            };
+        } else {
+            collections = new Uri[]{MediaStore.Images.Media.EXTERNAL_CONTENT_URI};
+        }
+
+        for (Uri collection : collections) {
+            queryMediaStore(context, collection);
+        }
+    }
+
+    private static void queryMediaStore(Context context, Uri collection) {
         String[] projection = {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DISPLAY_NAME,
@@ -45,8 +57,6 @@ public class MetadataExample {
 
                     try (InputStream inputStream = contentResolver.openInputStream(fileUri)) {
                         Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
-
-                        // Check for the camera model
                         String cameraModel = null;
                         for (Directory directory : metadata.getDirectories()) {
                             if (directory.containsTag(ExifDirectoryBase.TAG_MODEL)) {
@@ -65,11 +75,10 @@ public class MetadataExample {
                     }
                 } while (cursor.moveToNext());
             } else {
-                Log.d(TAG, "No images found in MediaStore.");
+                Log.d(TAG, "No images found in MediaStore for: " + collection);
             }
         } catch (Exception e) {
             Log.e(TAG, "Error querying MediaStore", e);
         }
     }
-
 }

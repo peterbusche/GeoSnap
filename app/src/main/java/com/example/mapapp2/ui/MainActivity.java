@@ -7,8 +7,12 @@ package com.example.mapapp2.ui;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -58,6 +62,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
 
     private static final int REQUEST_STORAGE_PERMISSION = 1001;
+    private static final int REQUEST_MANAGE_STORAGE = 2296;
     private static final String TAG = "MainActivityTAG";
 
     @Override
@@ -67,21 +72,29 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+//                != PackageManager.PERMISSION_GRANTED) {
+//
+//            // Show rationale if necessary
+//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+//                Toast.makeText(this, "Storage permission is needed to access photos.", Toast.LENGTH_SHORT).show();
+//            }
+//
+//            // Request permission
+//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
+//        } else {
+//            // Permission already granted
+//            Log.i(TAG, "Permission already granted");
+//            //testEXIFExtractor();
+//            MetadataTest();
+//        }
 
-            // Show rationale if necessary
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                Toast.makeText(this, "Storage permission is needed to access photos.", Toast.LENGTH_SHORT).show();
-            }
 
-            // Request permission
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
+        if (!hasStorageAccess()) {
+            requestStorageAccess();
         } else {
-            // Permission already granted
-            Log.i(TAG, "Permission already granted");
-            //testEXIFExtractor();
-            MetadataTest();
+            Log.d(TAG, "Storage permissions already granted");
+            MetadataExample.extractMetadataFromMediaStore(this);
         }
 
 
@@ -128,163 +141,75 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
-    private void testEXIFExtractor(){
-        String testPath = "/storage/emulated/0/Pictures/1.jpg"; // Replace with the actual file path
-        double[] latLng = EXIFExtractor.extractLatLng(testPath);
-        if (latLng != null) {
-            Log.d(TAG, "Extracted Latitude: " + latLng[0] + ", Longitude: " + latLng[1]);
+    private boolean hasStorageAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return Environment.isExternalStorageManager();
         } else {
-            Log.d(TAG, "No GPS data found in: " + testPath);
+            int readPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
+            return readPermission == PackageManager.PERMISSION_GRANTED;
         }
     }
 
-
-
-    private void testEXIFExtractor2() {
-        // Query MediaStore for all indexed images
-        String[] projection = {MediaStore.Images.Media.DATA};
-
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null, // No selection filter
-                null, // No selection arguments
-                MediaStore.Images.Media.DATE_TAKEN + " DESC" // Sort by most recent
-        );
-
-        if (cursor == null) {
-            Log.d(TAG, "Cursor is null. No images found on the device.");
-            Toast.makeText(this, "No images found on the device.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        try {
-            if (cursor.moveToFirst()) {
-                int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-
-                do {
-                    String filePath = cursor.getString(dataColumn);
-                    Log.i(TAG, "Processing file: " + filePath);
-
-                    // Use EXIFExtractor to process the file
-                    File testFile = new File(filePath);
-                    if (testFile.exists()) {
-                        double[] latLng = EXIFExtractor.extractLatLng(filePath);
-                        if (latLng != null) {
-                            Log.d(TAG, "Extracted Latitude: " + latLng[0] + ", Longitude: " + latLng[1]);
-                            Toast.makeText(this, "File: " + filePath + "\nLatitude: " + latLng[0] + ", Longitude: " + latLng[1], Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.d(TAG, "No GPS data found in the image: " + filePath);
-                        }
-                    } else {
-                        Log.e(TAG, "File does not exist or is inaccessible: " + filePath);
-                    }
-                } while (cursor.moveToNext());
-            } else {
-                Log.d(TAG, "No images found on the device.");
-                Toast.makeText(this, "No images found on the device.", Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error processing images: ", e);
-        } finally {
-            cursor.close();
-        }
-    }
-
-
-
-
-
-
-    private void testEXIFExtractor1() {
-
-        Log.i(TAG, "EXIF EXTRACTOR: START");
-        // Query the MediaStore for images
-        String[] projection = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                null,
-                null,
-                MediaStore.Images.Media.DATE_TAKEN + " DESC"
-        );
-
-        if (cursor != null && cursor.moveToFirst()) {
-            int dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            String filePath = cursor.getString(dataColumn);
-            cursor.close();
-
-            // Now use this file path with EXIFExtractor
-            File testFile = new File(filePath);
-            if (testFile.exists()) {
-                double[] latLng = EXIFExtractor.extractLatLng(filePath);
-                if (latLng != null) {
-                    Log.d(TAG, "Extracted Latitude: " + latLng[0] + ", Longitude: " + latLng[1]);
-                    Toast.makeText(this, "Latitude: " + latLng[0] + ", Longitude: " + latLng[1], Toast.LENGTH_SHORT).show();
-                } else {
-                    Log.d(TAG, "No GPS data found in the image.");
-                    Toast.makeText(this, "No GPS data found in the image.", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Log.d(TAG, "Image file not found: " + filePath);
-                Toast.makeText(this, "Image file not found.", Toast.LENGTH_SHORT).show();
+    private void requestStorageAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
             }
         } else {
-            Log.d(TAG, "No images found on the device.");
-            Toast.makeText(this, "No images found on the device.", Toast.LENGTH_SHORT).show();
+            ActivityCompat.requestPermissions(this, new String[]{
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+            }, REQUEST_STORAGE_PERMISSION);
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_MANAGE_STORAGE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
+                Log.d(TAG, "Manage storage permission granted");
+                MetadataExample.extractMetadataFromMediaStore(this);
+            } else {
+                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(TAG, "Permission granted");
-                testEXIFExtractor();
+                Log.d(TAG, "Storage permissions granted");
+                MetadataExample.extractMetadataFromMediaStore(this);
             } else {
                 Log.i(TAG, "Permission denied");
-                Toast.makeText(this, "Permission is required to access photos.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Storage permissions denied", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
 
-
-
-
-
-
-
-
-
-    private void testMetadataCacheAndFileUtils() {
-        MetadataCacheRepository cacheRepository = new MetadataCacheRepository(this);
-
-        // Test Metadata Cache
-        List<PhotoMetadata> testMetadata = new ArrayList<>();
-        testMetadata.add(new PhotoMetadata("/path/to/image.jpg", 40.7128, -74.0060, System.currentTimeMillis()));
-        cacheRepository.saveMetadataToCache(testMetadata);
-
-        List<PhotoMetadata> loadedMetadata = cacheRepository.loadMetadataFromCache();
-        Log.d("MainActivity", "Loaded metadata size: " + loadedMetadata.size());
-
-        cacheRepository.clearCache();
-        Log.d("MainActivity", "Cleared metadata cache.");
-
-        // Test FileUtils
-        String testFilePath = "/path/to/image.jpg";
-        boolean fileExists = FileUtils.doesFileExist(testFilePath);
-        Log.d("MainActivity", "File exists: " + fileExists);
-
-        long fileSize = FileUtils.getFileSize(testFilePath);
-        Log.d("MainActivity", "File size: " + fileSize);
-
-        boolean deleted = FileUtils.deleteFile(testFilePath);
-        Log.d("MainActivity", "File deleted: " + deleted);
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == REQUEST_STORAGE_PERMISSION) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                Log.i(TAG, "Permission granted");
+//                //testEXIFExtractor();
+//            } else {
+//                Log.i(TAG, "Permission denied");
+//                Toast.makeText(this, "Permission is required to access photos.", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
 
 
 
