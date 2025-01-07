@@ -29,4 +29,4 @@ GeoSnap is an Android application that displays user images on a Google Map with
 ![Login Screen]([Screenshot 2025-01-06 103733.png](https://github.com/peterbusche/GeoSnap/blob/main/Screenshot%202025-01-06%20103733.png))
 
 ### Google Maps API
-![Google Maps](Screenshot 2025-01-06 103832.png)
+![Google Maps]([Screenshot 2025-01-06 103832.png](https://github.com/peterbusche/GeoSnap/blob/main/Screenshot%202025-01-06%20103832.png))
