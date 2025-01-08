@@ -83,24 +83,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
 
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-//                != PackageManager.PERMISSION_GRANTED) {
-//
-//            // Show rationale if necessary
-//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-//                Toast.makeText(this, "Storage permission is needed to access photos.", Toast.LENGTH_SHORT).show();
-//            }
-//
-//            // Request permission
-//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
-//        } else {
-//            // Permission already granted
-//            Log.i(TAG, "Permission already granted");
-//            //testEXIFExtractor();
-//            MetadataTest();
-//        }
-
-
         if (!hasStorageAccess()) {
             requestStorageAccess();
         } else {
@@ -146,33 +128,31 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
-    private void MetadataTest() {
-        MetadataExample.extractMetadataFromMediaStore(this);
-    }
-
-
     private boolean hasStorageAccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            return Environment.isExternalStorageManager();
-        } else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {   //for android 11 (API 30+)
+            Log.i(TAG, "Route for Android 11 (hasStorageAccess())");
+            return Environment.isExternalStorageManager();  //checks AndroidManifest for MANAGE_EXTERNAL_STORAGE permission
+        } else {    //for android 10 and below
+            Log.i(TAG, "Route for Android 10 (hasStorageAccess())");
             int readPermission = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
             return readPermission == PackageManager.PERMISSION_GRANTED;
         }
     }
 
     private void requestStorageAccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { //for android 11 (API 30+)
             try {
+                Log.i(TAG, "Route for Android 11 (requestStorageAccess())");
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 intent.setData(Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.d(TAG, "requestStorageAccess has been denied");
                 Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
                 startActivityForResult(intent, REQUEST_MANAGE_STORAGE);
             }
-        } else {
+        } else {    //for android 10 and below
+            Log.i(TAG, "Route for Android 10 (requestStorageAccess())");
             ActivityCompat.requestPermissions(this, new String[]{
                     Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
@@ -190,6 +170,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             } else {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
             }
+        } else {
+            Log.d(TAG, "Improper Request Code: onActivityResult()");
         }
     }
 
@@ -204,23 +186,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.i(TAG, "Permission denied");
                 Toast.makeText(this, "Storage permissions denied", Toast.LENGTH_SHORT).show();
             }
+        } else {
+            Log.d(TAG, "Improper Request Code: onRequestPermissionsResult()");
         }
     }
-
-
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        if (requestCode == REQUEST_STORAGE_PERMISSION) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                Log.i(TAG, "Permission granted");
-//                //testEXIFExtractor();
-//            } else {
-//                Log.i(TAG, "Permission denied");
-//                Toast.makeText(this, "Permission is required to access photos.", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
 
 
 

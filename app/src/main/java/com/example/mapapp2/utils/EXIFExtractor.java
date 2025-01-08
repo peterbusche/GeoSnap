@@ -8,12 +8,7 @@ import java.io.IOException;
 public class EXIFExtractor {
     private static final String TAG = "EXIFExtractor";
 
-    /**
-     * Extract latitude and longitude from an image file.
-     *
-     * @param filePath The file path of the image.
-     * @return A double array with latitude and longitude, or null if unavailable.
-     */
+
     public static double[] extractLatLng(String filePath) {
         try {
             ExifInterface exifInterface = new ExifInterface(filePath);
