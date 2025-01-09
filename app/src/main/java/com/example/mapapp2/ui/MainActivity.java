@@ -34,6 +34,8 @@ import com.example.mapapp2.repository.MetadataCacheRepository;
 import com.example.mapapp2.utils.FileUtils;
 import com.example.mapapp2.utils.EXIFExtractor;
 import com.example.mapapp2.utils.MetadataExample;
+import com.example.mapapp2.repository.PhotoRepository;
+import com.example.mapapp2.models.PhotoMetadata;
 
 import com.google.android.gms.maps.OnMapReadyCallback;
 
@@ -51,6 +53,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -71,6 +74,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private Button btnLogout, zoomInButton, zoomOutButton;
 
     private GoogleMap mMap;
+    private List<PhotoMetadata> photoMetadataList;
+
 
     private static final int REQUEST_STORAGE_PERMISSION = 1001;
     private static final int REQUEST_MANAGE_STORAGE = 2296;
@@ -87,7 +92,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             requestStorageAccess();
         } else {
             Log.d(TAG, "Storage permissions already granted");
-            MetadataExample.extractMetadataFromMediaStore(this);
+            //MetadataExample.extractMetadataFromMediaStore(this);
+            fetchAndLogPhotoMetadata();
         }
 
 
@@ -160,13 +166,33 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    private void fetchAndLogPhotoMetadata() {
+        PhotoRepository photoRepository = new PhotoRepository(this);
+        photoMetadataList = photoRepository.fetchPhotoMetadata();
+
+        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            for (PhotoMetadata metadata : photoMetadataList) {
+                Log.d(TAG, "Photo Metadata: " +
+                        "File Path: " + metadata.getFilePath() +
+                        ", Latitude: " + metadata.getLatitude() +
+                        ", Longitude: " + metadata.getLongitude() +
+                        ", Timestamp: " + metadata.getTimestamp());
+            }
+        } else {
+            Log.d(TAG, "No photo metadata available.");
+        }
+    }
+
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_MANAGE_STORAGE) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
                 Log.d(TAG, "Manage storage permission granted");
-                MetadataExample.extractMetadataFromMediaStore(this);
+                //MetadataExample.extractMetadataFromMediaStore(this);
+                fetchAndLogPhotoMetadata();
             } else {
                 Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
             }
@@ -181,7 +207,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         if (requestCode == REQUEST_STORAGE_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "Storage permissions granted");
-                MetadataExample.extractMetadataFromMediaStore(this);
+                //MetadataExample.extractMetadataFromMediaStore(this);
+                fetchAndLogPhotoMetadata();
             } else {
                 Log.i(TAG, "Permission denied");
                 Toast.makeText(this, "Storage permissions denied", Toast.LENGTH_SHORT).show();
@@ -206,6 +233,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Set initial camera position
         initialCameraPosition();
+
+        // Add markers to the map
+        addPhotoMarkers();
+
+        // Set up marker click listener
+        setupMarkerClickListener();
+
     }
 
     private void initialCameraPosition() {
@@ -227,6 +261,46 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
+    }
+
+
+    private void addPhotoMarkers() {
+        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            for (PhotoMetadata metadata : photoMetadataList) {
+                if (metadata.getLatitude() != 0 && metadata.getLongitude() != 0) {
+                    LatLng location = new LatLng(metadata.getLatitude(), metadata.getLongitude());
+                    mMap.addMarker(new MarkerOptions()
+                            .position(location)
+                            .title("Photo: " + metadata.getFilePath()));
+                }
+            }
+
+            // Optionally, center the map on the first photo location
+            if (!photoMetadataList.isEmpty()) {
+                LatLng firstLocation = new LatLng(
+                        photoMetadataList.get(0).getLatitude(),
+                        photoMetadataList.get(0).getLongitude()
+                );
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLocation, 10));
+            }
+        } else {
+            Log.d(TAG, "No photo metadata available for map markers.");
+        }
+    }
+
+    private void setupMarkerClickListener() {
+        mMap.setOnMarkerClickListener(marker -> {
+            String title = marker.getTitle();
+            if (title != null && title.startsWith("Photo: ")) {
+                String filePath = title.replace("Photo: ", "");
+                // Display the image file path or load the image
+                Toast.makeText(this, "Photo: " + filePath, Toast.LENGTH_SHORT).show();
+
+                // Optionally, display the image in a dialog or activity
+                // displayImage(filePath);
+            }
+            return false;
+        });
     }
 
 }

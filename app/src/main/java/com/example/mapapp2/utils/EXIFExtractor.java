@@ -1,29 +1,108 @@
 package com.example.mapapp2.utils;
 
-import android.media.ExifInterface;
+import com.example.mapapp2.models.PhotoMetadata;
+
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
 
-import java.io.IOException;
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.metadata.Directory;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.exif.ExifDirectoryBase;
+import com.drew.metadata.exif.GpsDirectory;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class EXIFExtractor {
     private static final String TAG = "EXIFExtractor";
 
+    /**
+     * Extract metadata including latitude and longitude from images.
+     *
+     * @param context Application context for accessing ContentResolver.
+     * @return List of PhotoMetadata containing file path, latitude, longitude, and timestamp.
+     */
+    public static List<PhotoMetadata> extractPhotoMetadata(Context context) {
+        List<PhotoMetadata> metadataList = new ArrayList<>();
 
-    public static double[] extractLatLng(String filePath) {
-        try {
-            ExifInterface exifInterface = new ExifInterface(filePath);
+        Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        String[] projection = {
+                MediaStore.Images.Media._ID,
+                MediaStore.Images.Media.DISPLAY_NAME,
+                MediaStore.Images.Media.DATE_TAKEN
+        };
 
-            float[] latLng = new float[2];
-            if (exifInterface.getLatLong(latLng)) {
-                Log.d(TAG, "Extracted lat/lng: " + latLng[0] + ", " + latLng[1]);
-                return new double[]{latLng[0], latLng[1]};
+        ContentResolver contentResolver = context.getContentResolver();
+
+        try (Cursor cursor = contentResolver.query(
+                collection,
+                projection,
+                null,
+                null,
+                MediaStore.Images.Media.DATE_TAKEN + " DESC"
+        )) {
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
+                    String displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME));
+                    Uri fileUri = ContentUris.withAppendedId(collection, id);
+
+                    Log.d(TAG, "Processing file: " + displayName + " (URI: " + fileUri.toString() + ")");
+
+                    try (InputStream inputStream = contentResolver.openInputStream(fileUri)) {
+                        Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
+
+                        // Extract latitude and longitude
+                        double[] latLng = extractLatLng(metadata);
+
+                        if (latLng != null) {
+                            long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN));
+                            PhotoMetadata photoMetadata = new PhotoMetadata(
+                                    fileUri.toString(),
+                                    latLng[0], // Latitude
+                                    latLng[1], // Longitude
+                                    timestamp
+                            );
+                            metadataList.add(photoMetadata);
+                            Log.d(TAG, "Added PhotoMetadata: " + photoMetadata);
+                        } else {
+                            Log.d(TAG, "No GPS data found for file: " + displayName);
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error reading metadata for file: " + displayName, e);
+                    }
+                } while (cursor.moveToNext());
             } else {
-                Log.d(TAG, "No GPS data found in EXIF metadata for file: " + filePath);
+                Log.d(TAG, "No images found in MediaStore.");
             }
-        } catch (IOException e) {
-            Log.e(TAG, "Error reading EXIF metadata for file: " + filePath, e);
+        } catch (Exception e) {
+            Log.e(TAG, "Error querying MediaStore", e);
         }
 
+        return metadataList;
+    }
+
+    /**
+     * Extract latitude and longitude from metadata.
+     *
+     * @param metadata Metadata object to parse.
+     * @return Array with latitude and longitude or null if not found.
+     */
+    private static double[] extractLatLng(Metadata metadata) {
+        GpsDirectory gpsDirectory = metadata.getFirstDirectoryOfType(GpsDirectory.class);
+        if (gpsDirectory != null && gpsDirectory.getGeoLocation() != null) {
+            return new double[]{
+                    gpsDirectory.getGeoLocation().getLatitude(),
+                    gpsDirectory.getGeoLocation().getLongitude()
+            };
+        }
         return null;
     }
 }

@@ -25,4 +25,14 @@ public class PhotoMetadata {
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    @Override
+    public String toString() {
+        return "PhotoMetadata{" +
+                "filePath='" + filePath + '\'' +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }
