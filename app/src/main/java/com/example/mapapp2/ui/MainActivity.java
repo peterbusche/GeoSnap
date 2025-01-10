@@ -221,7 +221,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
+    private void setTestCameraPosition() {
+        LatLng testLocation = new LatLng(43.599222222222224, -116.24865); // Your test coordinates
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(testLocation, 15)); // Adjust zoom level as needed
+    }
 
 
     private void navigateToLogin() {
@@ -260,7 +263,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
 
         // Set initial camera position
-        initialCameraPosition();
+        //initialCameraPosition();
+        setTestCameraPosition();
 
         // Add markers to the map
         addPhotoMarkers();
@@ -322,7 +326,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     info.append(metadata.getFilePath()).append("\n");
                 }
                 // Display the information in a Toast or a dialog
-                Toast.makeText(this, info.toString(), Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, info.toString(), Toast.LENGTH_LONG).show();
+
+                ImageDialogFragment dialog = ImageDialogFragment.newInstance(metadataList);
+                dialog.show(getSupportFragmentManager(), "ImageDialog");
+
             } else {
                 Log.d(TAG, "No photos found for this marker.");
             }
