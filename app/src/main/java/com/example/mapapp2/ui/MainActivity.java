@@ -24,7 +24,9 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.mapapp2.R;
@@ -54,6 +56,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -61,9 +64,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
-
-
-
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,6 +74,7 @@ import java.util.Map;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
     private Button btnLogout, zoomInButton, zoomOutButton;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
     private GoogleMap mMap;
     private List<PhotoMetadata> photoMetadataList;
@@ -134,6 +135,54 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                 mMap.animateCamera(CameraUpdateFactory.zoomOut());
             }
         });
+
+        // Set up the bottom sheet
+        LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+
+
+        // Set initial state of the bottom sheet
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+
+        bottomSheetBehavior.setPeekHeight(230); // Adjust as needed
+
+
+        if (bottomSheetBehavior == null) {
+            Log.e(TAG, "BottomSheetBehavior is null. Check your layout and initialization.");
+        }
+
+        // Optional: Add listeners for bottom sheet state changes
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                switch (newState) {
+                    case BottomSheetBehavior.STATE_EXPANDED:
+                        Log.d(TAG, "Bottom sheet expanded");
+                        break;
+                    case BottomSheetBehavior.STATE_COLLAPSED:
+                        Log.d(TAG, "Bottom sheet collapsed");
+                        break;
+                    case BottomSheetBehavior.STATE_DRAGGING:
+                        Log.d(TAG, "Bottom sheet dragging");
+                        break;
+                    case BottomSheetBehavior.STATE_HIDDEN:
+                        Log.d(TAG, "Bottom sheet hidden");
+                        break;
+                }
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                Log.d(TAG, "Bottom sheet slide offset: " + slideOffset);
+            }
+        });
+
+        // Example action inside the bottom sheet
+        Button bottomSheetAction = findViewById(R.id.bottom_sheet_action);
+        bottomSheetAction.setOnClickListener(v -> {
+            Toast.makeText(this, "Bottom sheet action clicked!", Toast.LENGTH_SHORT).show();
+        });
+
 
     }
 
