@@ -67,7 +67,9 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -75,6 +77,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private List<PhotoMetadata> photoMetadataList;
+    private Map<LatLng, List<PhotoMetadata>> locationMap = new HashMap<>(); //temporary - bad design (used to fix duplicates issue)
 
 
     private static final int REQUEST_STORAGE_PERMISSION = 1001;
@@ -227,21 +230,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         finish();
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        // Set initial camera position
-        initialCameraPosition();
-
-        // Add markers to the map
-        addPhotoMarkers();
-
-        // Set up marker click listener
-        setupMarkerClickListener();
-
-    }
-
     private void initialCameraPosition() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
@@ -264,25 +252,58 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
+
+
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        // Set initial camera position
+        initialCameraPosition();
+
+        // Add markers to the map
+        addPhotoMarkers();
+
+        // Set up marker click listener
+        setupMarkerClickListener();
+
+    }
+
+
+
+
     private void addPhotoMarkers() {
+        Log.i(TAG, "addPhotoMarkers(): ");
+
         if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            // Clear the map and locationMap to avoid duplicates on reload
+            mMap.clear();
+            locationMap.clear();
+
+            // Group images by GPS coordinates
             for (PhotoMetadata metadata : photoMetadataList) {
                 if (metadata.getLatitude() != 0 && metadata.getLongitude() != 0) {
                     LatLng location = new LatLng(metadata.getLatitude(), metadata.getLongitude());
-                    mMap.addMarker(new MarkerOptions()
-                            .position(location)
-                            .title("Photo: " + metadata.getFilePath()));
+                    locationMap.computeIfAbsent(location, k -> new ArrayList<>()).add(metadata);
+                } else {
+                    Log.i(TAG, "No GPS metadata for file: " + metadata.getFilePath());
                 }
             }
 
-            // Optionally, center the map on the first photo location
-            if (!photoMetadataList.isEmpty()) {
-                LatLng firstLocation = new LatLng(
-                        photoMetadataList.get(0).getLatitude(),
-                        photoMetadataList.get(0).getLongitude()
-                );
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(firstLocation, 10));
+            // Add a single marker for each unique location
+            for (Map.Entry<LatLng, List<PhotoMetadata>> entry : locationMap.entrySet()) {
+                LatLng location = entry.getKey();
+                List<PhotoMetadata> metadataList = entry.getValue();
+
+                // Use the title to indicate the number of images at this location
+                String markerTitle = "Photos: " + metadataList.size();
+                mMap.addMarker(new MarkerOptions()
+                        .position(location)
+                        .title(markerTitle));
             }
+
+            Log.i(TAG, "Markers added for " + locationMap.size() + " unique locations.");
         } else {
             Log.d(TAG, "No photo metadata available for map markers.");
         }
@@ -290,18 +311,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private void setupMarkerClickListener() {
         mMap.setOnMarkerClickListener(marker -> {
-            String title = marker.getTitle();
-            if (title != null && title.startsWith("Photo: ")) {
-                String filePath = title.replace("Photo: ", "");
-                // Display the image file path or load the image
-                Toast.makeText(this, "Photo: " + filePath, Toast.LENGTH_SHORT).show();
+            LatLng markerPosition = marker.getPosition();
 
-                // Optionally, display the image in a dialog or activity
-                // displayImage(filePath);
+            // Retrieve the list of photos for this marker's position
+            List<PhotoMetadata> metadataList = locationMap.get(markerPosition);
+
+            if (metadataList != null && !metadataList.isEmpty()) {
+                StringBuilder info = new StringBuilder("Photos at this location:\n");
+                for (PhotoMetadata metadata : metadataList) {
+                    info.append(metadata.getFilePath()).append("\n");
+                }
+                // Display the information in a Toast or a dialog
+                Toast.makeText(this, info.toString(), Toast.LENGTH_LONG).show();
+            } else {
+                Log.d(TAG, "No photos found for this marker.");
             }
-            return false;
+
+            return false; // Returning false allows the default behavior (e.g., camera movement) to occur
         });
     }
+
+
 
 }
 

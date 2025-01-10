@@ -91,3 +91,67 @@ private void accessStorage() {
 }
 
 
+
+
+
+
+
+
+============================URI (Uniform Resource Identifier) ===========================
+A Uniform Resource Identifier (URI) is a string that identifies a resource (e.g., a file, a web page, or an image) on a system
+In Android:
+    URIs are used to access resources such as files, database entries, or content provided by other apps.
+    URIs can point to:
+        A location on the web (https://example.com/image.jpg).
+        A resource in your app (content://media/external/images/media/12345).
+
+How URIs Work in MediaStore:
+    Each media file (image, video, etc.) is indexed and associated with a content URI.
+    URI Example: content://media/external/images/media/12345
+        Scheme: content indicates it's from a content provider (like MediaStore).
+        Authority: media specifies the content provider.
+        Path: /external/images/media/12345 indicates it's an image stored on external storage with ID 12345.
+
+    When Downloaded:
+        A downloaded image initially exists as a file in the Downloads folder or the app's private storage.
+    It does not inherently have a URI tied to it unless:
+        Your app generates one, or
+        The file is indexed by MediaStore.
+    Indexing by MediaStore:
+        If the image is saved to a public directory (e.g., Downloads or DCIM), MediaStore will eventually scan and index it, assigning a URI.
+    Pre-Existing URIs:
+        If the image is downloaded from the internet, it might have a URI in its original context (e.g., https://example.com/image.jpg).
+        This URI is different from the content:// URI assigned when the image is indexed on the device.
+
+
+
+
+Key Takeaways
+    URIs in MediaStore:
+        URIs are unique identifiers assigned to media files indexed by Android.
+        You’re retrieving these URIs from MediaStore rather than creating them.
+    How URIs Are Built:
+        Base URI (MediaStore.Images.Media.EXTERNAL_CONTENT_URI) + Unique ID (_ID) = Complete URI.
+    Downloaded Images:
+        Do not inherently have a URI upon download.
+        They get a URI if saved to a public directory and indexed by MediaStore.
+    URI Format:
+        Strings encapsulated by the Uri class, which Android uses to locate resources.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

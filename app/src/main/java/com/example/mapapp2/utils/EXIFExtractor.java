@@ -25,14 +25,18 @@ public class EXIFExtractor {
 
     /**
      * Extract metadata including latitude and longitude from images.
+     * Mediastore is setup like a database, so we just need to write a mediastore query
+     *      - All images at "MediaStore.Images.Media.EXTERNAL_CONTENT_URI"  will be indexed and accessible
+     *      - This means my app doesnt need to do any recursive file-walking, since it doesnt
+     *              need to worry about nested sub-directories
      *
      * @param context Application context for accessing ContentResolver.
      * @return List of PhotoMetadata containing file path, latitude, longitude, and timestamp.
      */
     public static List<PhotoMetadata> extractPhotoMetadata(Context context) {
         List<PhotoMetadata> metadataList = new ArrayList<>();
+        Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI; //
 
-        Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         String[] projection = {
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DISPLAY_NAME,
@@ -41,35 +45,26 @@ public class EXIFExtractor {
 
         ContentResolver contentResolver = context.getContentResolver();
 
-        try (Cursor cursor = contentResolver.query(
-                collection,
-                projection,
-                null,
-                null,
-                MediaStore.Images.Media.DATE_TAKEN + " DESC"
-        )) {
+        try (Cursor cursor = contentResolver.query(collection, projection, null, null, MediaStore.Images.Media.DATE_TAKEN + " DESC")) {
             if (cursor != null && cursor.moveToFirst()) {
                 do {
                     long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
                     String displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME));
-                    Uri fileUri = ContentUris.withAppendedId(collection, id);
+                    Uri fileUri = ContentUris.withAppendedId(collection, id); //grab URI from mediastore, and append it to our collection
 
                     Log.d(TAG, "Processing file: " + displayName + " (URI: " + fileUri.toString() + ")");
 
                     try (InputStream inputStream = contentResolver.openInputStream(fileUri)) {
+                        //create metadata object to interact with drew noakes library
                         Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
 
                         // Extract latitude and longitude
                         double[] latLng = extractLatLng(metadata);
 
+
                         if (latLng != null) {
                             long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN));
-                            PhotoMetadata photoMetadata = new PhotoMetadata(
-                                    fileUri.toString(),
-                                    latLng[0], // Latitude
-                                    latLng[1], // Longitude
-                                    timestamp
-                            );
+                            PhotoMetadata photoMetadata = new PhotoMetadata(fileUri.toString(), latLng[0], latLng[1], timestamp);
                             metadataList.add(photoMetadata);
                             Log.d(TAG, "Added PhotoMetadata: " + photoMetadata);
                         } else {
@@ -89,12 +84,8 @@ public class EXIFExtractor {
         return metadataList;
     }
 
-    /**
-     * Extract latitude and longitude from metadata.
-     *
-     * @param metadata Metadata object to parse.
-     * @return Array with latitude and longitude or null if not found.
-     */
+
+    //use drew noakes library to grab lat/lang from raw metadata
     private static double[] extractLatLng(Metadata metadata) {
         GpsDirectory gpsDirectory = metadata.getFirstDirectoryOfType(GpsDirectory.class);
         if (gpsDirectory != null && gpsDirectory.getGeoLocation() != null) {
