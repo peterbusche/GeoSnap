@@ -143,14 +143,45 @@ Key Takeaways
 
 
 
+============================== ACTIVITIES/LISTENERS LIFECYCLES =================================
+Memory and Activities
+    When Swapping Activities:
+        If you navigate from one activity to another (e.g., MainActivity → SecondActivity):
+    Default Behavior:
+        The current activity (MainActivity) is paused and stopped but remains in memory unless explicitly destroyed.
+    Explicit Finish:
+        If you call finish() on MainActivity, its resources (including listeners, ImageViews, etc.) are eligible for garbage collection.
+    Garbage Collection:
+        When an activity is destroyed, its associated objects (e.g., views, listeners) are eligible for garbage collection, assuming there are no references to them elsewhere.
+
+
+What Persists in an Activity?
+    Listeners
+        Persistence:
+            Listeners (onClickListener, etc.) persist as long as their associated views or components exist within the activity.
+        Lifecycle:
+            They are cleaned up when the activity is destroyed unless there are external references keeping them alive (e.g., static variables).
+    ImageView Instances
+        Persistence:
+            Any ImageView created in an activity remains in memory as long as the activity exists or the view is part of the view hierarchy.
+            If the activity is destroyed, the ImageView and associated resources are eligible for garbage collection.
+    Other Persisting Objects
+        Views:
+            All views declared in your layout (e.g., TextView, Button, LinearLayout) persist in memory as part of the activity's view hierarchy.
+        Fields:
+            Non-static member variables (fields) of the activity persist for the lifetime of the activity.
+        Static Variables:
+            Static variables persist for the lifetime of the app process and are not tied to any specific activity.
 
 
 
-
-
-
-
-
+Summary of Persistence
+    Type:	                Lifetime:
+        Activity Fields	        Persist through the activity's lifetime.
+        Views	                Persist as part of the activity's view hierarchy.
+        Listeners	            Persist as long as their associated views persist.
+        Static Variables	    Persist for the lifetime of the app process.
+        ImageView Instances	    Persist as part of the activity or view hierarchy.
 
 
 

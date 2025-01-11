@@ -1,56 +1,132 @@
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ui.MainActivity">
+    android:layout_height="match_parent">
 
-    <!-- Map Fragment -->
-    <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <!-- CoordinatorLayout for Bottom Sheet -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_navigation_parent">
 
-    <!-- Bottom Sheet -->
-    <LinearLayout
-        android:id="@+id/bottom_sheet"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@android:color/white"
-        android:padding="16dp"
-        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+        <!-- Google Map Fragment -->
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
-        <TextView
-            android:id="@+id/bottom_sheet_header"
+        <!-- Bottom Sheet -->
+        <LinearLayout
+            android:id="@+id/bottom_sheet"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bottom Sheet Header"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:paddingBottom="8dp" />
+            android:orientation="vertical"
+            android:background="@android:color/white"
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-        <!-- Example content inside the bottom sheet -->
-        <Button
-            android:id="@+id/bottom_sheet_action"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Action" />
-    </LinearLayout>
+            <View
+                android:layout_width="40dp"
+                android:layout_height="5dp"
+                android:layout_gravity="center"
+                android:background="@android:color/darker_gray"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bottom Sheet Header"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:paddingBottom="8dp" />
+
+
+            <!-- Scrollable Content -->
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Example Rows -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:background="@android:color/holo_blue_light"
+                        android:text="Row 1"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:background="@android:color/holo_green_light"
+                        android:text="Row 2"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:background="@android:color/holo_orange_light"
+                        android:text="Row 3"
+                        android:gravity="center" />
+
+                    <!-- Horizontal Scrollable Image Section -->
+                    <HorizontalScrollView
+                        android:id="@+id/horizontal_scroll_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <LinearLayout
+                            android:id="@+id/image_scroll_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+                    </HorizontalScrollView>
+
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:background="@android:color/holo_blue_light"
+                        android:text="Row 1"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:background="@android:color/holo_green_light"
+                        android:text="Row 2"
+                        android:gravity="center" />
+
+                    <!-- Add more rows as needed -->
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <!-- Bottom Navigation Bar -->
     <LinearLayout
-        android:id="@+id/bottom_navigation_bar"
+        android:id="@+id/bottom_navigation_parent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
+        android:layout_alignParentBottom="true"
         android:background="@color/purple_200"
-        android:layout_gravity="bottom"
         android:padding="8dp">
 
+        <!-- Buttons -->
         <Button
             android:id="@+id/zoom_in_button"
             android:layout_width="0dp"
@@ -72,4 +148,4 @@
             android:layout_weight="1"
             android:text="Logout" />
     </LinearLayout>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>

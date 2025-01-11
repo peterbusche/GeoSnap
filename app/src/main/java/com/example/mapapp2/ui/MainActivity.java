@@ -26,6 +26,7 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -74,6 +75,7 @@ import java.util.Map;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback {
     private Button btnLogout, zoomInButton, zoomOutButton;
+    private LinearLayout bottomSheet;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
     private GoogleMap mMap;
@@ -91,20 +93,21 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_main);
 
 
-
         if (!hasStorageAccess()) {
             requestStorageAccess();
         } else {
             Log.d(TAG, "Storage permissions already granted");
             //MetadataExample.extractMetadataFromMediaStore(this);
             fetchAndLogPhotoMetadata();
+            populateImageScrollView();
         }
+
 
 
         btnLogout = findViewById(R.id.btn_logout);
         zoomInButton = findViewById(R.id.zoom_in_button);
         zoomOutButton = findViewById(R.id.zoom_out_button);
-
+        bottomSheet = findViewById(R.id.bottom_sheet);
 
 
         // Map initialization
@@ -136,55 +139,49 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
-        // Set up the bottom sheet
-        LinearLayout bottomSheet = findViewById(R.id.bottom_sheet);
+
+        //Bottom Sheet Functionality
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
 
-
-        // Set initial state of the bottom sheet
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-
-        bottomSheetBehavior.setPeekHeight(230); // Adjust as needed
-
-
-        if (bottomSheetBehavior == null) {
-            Log.e(TAG, "BottomSheetBehavior is null. Check your layout and initialization.");
-        }
-
-        // Optional: Add listeners for bottom sheet state changes
-        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                switch (newState) {
-                    case BottomSheetBehavior.STATE_EXPANDED:
-                        Log.d(TAG, "Bottom sheet expanded");
-                        break;
-                    case BottomSheetBehavior.STATE_COLLAPSED:
-                        Log.d(TAG, "Bottom sheet collapsed");
-                        break;
-                    case BottomSheetBehavior.STATE_DRAGGING:
-                        Log.d(TAG, "Bottom sheet dragging");
-                        break;
-                    case BottomSheetBehavior.STATE_HIDDEN:
-                        Log.d(TAG, "Bottom sheet hidden");
-                        break;
-                }
-            }
-
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-                Log.d(TAG, "Bottom sheet slide offset: " + slideOffset);
-            }
-        });
-
-        // Example action inside the bottom sheet
-        Button bottomSheetAction = findViewById(R.id.bottom_sheet_action);
-        bottomSheetAction.setOnClickListener(v -> {
-            Toast.makeText(this, "Bottom sheet action clicked!", Toast.LENGTH_SHORT).show();
+        // Dynamically adjust peek height relative to navigation bar
+        LinearLayout navigationBar = findViewById(R.id.bottom_navigation_parent);
+        navigationBar.post(() -> { //use this to wait for navigation bar to load in UI thread before calculating bottom sheet height
+            int navigationBarHeight = navigationBar.getHeight();
+            bottomSheetBehavior.setPeekHeight(navigationBarHeight - 50); // 50dp for the drag handle
         });
 
 
     }
+
+    private void populateImageScrollView() {
+        LinearLayout imageScrollContainer = findViewById(R.id.image_scroll_container);
+
+        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            for (PhotoMetadata metadata : photoMetadataList) {
+                // Create an ImageView for each photo
+                ImageView imageView = new ImageView(this); //this will persist in memory since it is attached to MainActivity.java?
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(500, 500); // Adjust size as needed
+                layoutParams.setMargins(16, 0, 16, 0); // Add spacing between images
+                imageView.setLayoutParams(layoutParams);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+                // Load the image using its URI
+                imageView.setImageURI(Uri.parse(metadata.getFilePath()));
+
+                // Add click listener for the image (if needed, currently does nothing)
+                //
+                imageView.setOnClickListener(v -> {
+                    Toast.makeText(this, "Clicked on image: " + metadata.getFilePath(), Toast.LENGTH_SHORT).show();
+                });
+
+                // Add the ImageView to the horizontal scroll container
+                imageScrollContainer.addView(imageView);
+            }
+        } else {
+            Log.d(TAG, "No photo metadata available to populate the horizontal scroll view.");
+        }
+    }
+
 
     private boolean hasStorageAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {   //for android 11 (API 30+)
@@ -304,9 +301,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
-
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -322,8 +316,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         setupMarkerClickListener();
 
     }
-
-
 
 
     private void addPhotoMarkers() {
@@ -387,8 +379,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             return false; // Returning false allows the default behavior (e.g., camera movement) to occur
         });
     }
-
-
 
 }
 
