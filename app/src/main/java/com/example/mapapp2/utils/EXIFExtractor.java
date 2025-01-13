@@ -35,7 +35,7 @@ public class EXIFExtractor {
      */
     public static List<PhotoMetadata> extractPhotoMetadata(Context context) {
         List<PhotoMetadata> metadataList = new ArrayList<>();
-        Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI; //
+        Uri collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI; //collection (database table) to query
 
         String[] projection = {
                 MediaStore.Images.Media._ID,
@@ -43,18 +43,19 @@ public class EXIFExtractor {
                 MediaStore.Images.Media.DATE_TAKEN
         };
 
-        ContentResolver contentResolver = context.getContentResolver();
+        ContentResolver contentResolver = context.getContentResolver(); //how we interact with mediastore
 
+        //fetch all rows from mediaStore image collection ordered by date_taken in decending order
         try (Cursor cursor = contentResolver.query(collection, projection, null, null, MediaStore.Images.Media.DATE_TAKEN + " DESC")) {
-            if (cursor != null && cursor.moveToFirst()) {
+            if (cursor != null && cursor.moveToFirst()) { //read through query result
                 do {
-                    long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
-                    String displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME));
-                    Uri fileUri = ContentUris.withAppendedId(collection, id); //grab URI from mediastore, and append it to our collection
+                    long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)); //unique id for image
+                    String displayName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)); //filename
+                    Uri fileUri = ContentUris.withAppendedId(collection, id); //construct uril for the image by appending the id to the colleciton uri
 
                     Log.d(TAG, "Processing file: " + displayName + " (URI: " + fileUri.toString() + ")");
 
-                    try (InputStream inputStream = contentResolver.openInputStream(fileUri)) {
+                    try (InputStream inputStream = contentResolver.openInputStream(fileUri)) { //open inputstream to read image file
                         //create metadata object to interact with drew noakes library
                         Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
 
@@ -64,8 +65,8 @@ public class EXIFExtractor {
 
                         if (latLng != null) {
                             long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN));
-                            PhotoMetadata photoMetadata = new PhotoMetadata(fileUri.toString(), latLng[0], latLng[1], timestamp);
-                            metadataList.add(photoMetadata);
+                            PhotoMetadata photoMetadata = new PhotoMetadata(fileUri.toString(), latLng[0], latLng[1], timestamp); //create our PhotoMetadata object with data
+                            metadataList.add(photoMetadata); //add this object to our list which we will eventually return to our MainActivity.java class
                             Log.d(TAG, "Added PhotoMetadata: " + photoMetadata);
                         } else {
                             Log.d(TAG, "No GPS data found for file: " + displayName);
@@ -81,7 +82,7 @@ public class EXIFExtractor {
             Log.e(TAG, "Error querying MediaStore", e);
         }
 
-        return metadataList;
+        return metadataList; //return our constructed list of PhotoMetadata objects
     }
 
 

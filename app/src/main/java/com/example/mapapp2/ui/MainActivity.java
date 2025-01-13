@@ -59,6 +59,13 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
+//for google photos api
+//import com.google.android.gms.auth.api.signin.GoogleSignIn;
+//import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+//import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+//import com.google.android.gms.common.api.ApiException;
+//import com.google.android.gms.tasks.Task;
+
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -85,12 +92,15 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final int REQUEST_STORAGE_PERMISSION = 1001;
     private static final int REQUEST_MANAGE_STORAGE = 2296;
+
+    private static final int REQUEST_GOOGLE_SIGN_IN = 2001;
     private static final String TAG = "MainActivityTAG";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
 
 
         if (!hasStorageAccess()) {
@@ -101,7 +111,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             fetchAndLogPhotoMetadata();
             populateImageScrollView();
         }
-
 
 
         btnLogout = findViewById(R.id.btn_logout);
@@ -153,35 +162,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private void populateImageScrollView() {
-        LinearLayout imageScrollContainer = findViewById(R.id.image_scroll_container);
-
-        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
-            for (PhotoMetadata metadata : photoMetadataList) {
-                // Create an ImageView for each photo
-                ImageView imageView = new ImageView(this); //this will persist in memory since it is attached to MainActivity.java?
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(500, 500); // Adjust size as needed
-                layoutParams.setMargins(16, 0, 16, 0); // Add spacing between images
-                imageView.setLayoutParams(layoutParams);
-                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-                // Load the image using its URI
-                imageView.setImageURI(Uri.parse(metadata.getFilePath()));
-
-                // Add click listener for the image (if needed, currently does nothing)
-                //
-                imageView.setOnClickListener(v -> {
-                    Toast.makeText(this, "Clicked on image: " + metadata.getFilePath(), Toast.LENGTH_SHORT).show();
-                });
-
-                // Add the ImageView to the horizontal scroll container
-                imageScrollContainer.addView(imageView);
-            }
-        } else {
-            Log.d(TAG, "No photo metadata available to populate the horizontal scroll view.");
-        }
-    }
-
 
     private boolean hasStorageAccess() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {   //for android 11 (API 30+)
@@ -214,24 +194,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             }, REQUEST_STORAGE_PERMISSION);
         }
     }
-
-    private void fetchAndLogPhotoMetadata() {
-        PhotoRepository photoRepository = new PhotoRepository(this);
-        photoMetadataList = photoRepository.fetchPhotoMetadata();
-
-        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
-            for (PhotoMetadata metadata : photoMetadataList) {
-                Log.d(TAG, "Photo Metadata: " +
-                        "File Path: " + metadata.getFilePath() +
-                        ", Latitude: " + metadata.getLatitude() +
-                        ", Longitude: " + metadata.getLongitude() +
-                        ", Timestamp: " + metadata.getTimestamp());
-            }
-        } else {
-            Log.d(TAG, "No photo metadata available.");
-        }
-    }
-
 
 
     @Override
@@ -266,6 +228,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             Log.d(TAG, "Improper Request Code: onRequestPermissionsResult()");
         }
     }
+
+
+
+    private void fetchAndLogPhotoMetadata() {
+        PhotoRepository photoRepository = new PhotoRepository(this);
+        photoMetadataList = photoRepository.fetchPhotoMetadata();
+
+        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            for (PhotoMetadata metadata : photoMetadataList) {
+                Log.d(TAG, "Photo Metadata: " +
+                        "File Path: " + metadata.getFilePath() +
+                        ", Latitude: " + metadata.getLatitude() +
+                        ", Longitude: " + metadata.getLongitude() +
+                        ", Timestamp: " + metadata.getTimestamp());
+            }
+        } else {
+            Log.d(TAG, "No photo metadata available.");
+        }
+    }
+
+
 
     private void setTestCameraPosition() {
         LatLng testLocation = new LatLng(43.599222222222224, -116.24865); // Your test coordinates
@@ -378,6 +361,41 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
             return false; // Returning false allows the default behavior (e.g., camera movement) to occur
         });
+    }
+
+
+    private void populateImageScrollView() {
+        LinearLayout imageScrollContainer = findViewById(R.id.image_scroll_container);
+
+        if (photoMetadataList != null && !photoMetadataList.isEmpty()) {
+            for (PhotoMetadata metadata : photoMetadataList) {
+                // Create an ImageView for each photo
+                ImageView imageView = new ImageView(this); //this will persist in memory since it is attached to MainActivity.java?
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(500, 500); // Adjust size as needed
+                layoutParams.setMargins(16, 0, 16, 0); // Add spacing between images
+                imageView.setLayoutParams(layoutParams);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+                // Load the image using its URI
+                imageView.setImageURI(Uri.parse(metadata.getFilePath()));
+
+                // Add click listener for the image
+                imageView.setOnClickListener(v -> {
+                    if (metadata.getLatitude() != 0 && metadata.getLongitude() != 0) {
+                        LatLng imageLocation = new LatLng(metadata.getLatitude(), metadata.getLongitude());
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(imageLocation, 20)); // Adjust zoom level as needed
+                        Toast.makeText(this, "Moved to image location: " + metadata.getFilePath(), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "No GPS data available for this image.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+                // Add the ImageView to the horizontal scroll container
+                imageScrollContainer.addView(imageView);
+            }
+        } else {
+            Log.d(TAG, "No photo metadata available to populate the horizontal scroll view.");
+        }
     }
 
 }

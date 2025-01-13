@@ -62,22 +62,6 @@
                         android:text="Row 1"
                         android:gravity="center" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:background="@android:color/holo_green_light"
-                        android:text="Row 2"
-                        android:gravity="center" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:background="@android:color/holo_orange_light"
-                        android:text="Row 3"
-                        android:gravity="center" />
-
                     <!-- Horizontal Scrollable Image Section -->
                     <HorizontalScrollView
                         android:id="@+id/horizontal_scroll_view"
@@ -93,22 +77,6 @@
                             android:orientation="horizontal" />
                     </HorizontalScrollView>
 
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:background="@android:color/holo_blue_light"
-                        android:text="Row 1"
-                        android:gravity="center" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="8dp"
-                        android:background="@android:color/holo_green_light"
-                        android:text="Row 2"
-                        android:gravity="center" />
 
                     <!-- Add more rows as needed -->
                 </LinearLayout>
